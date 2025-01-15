@@ -22,9 +22,14 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
 
     hf.assure_consistency(waveData)
     hf.squareSpatialPositions(waveData)
+    grid_x, grid_y = sensors.interpolate_pos_to_grid(
+    waveData, 
+    numGridBins=15)
 
+    # make new distMat based on the interpolated grid
+    positions = np.dstack((grid_x, grid_y)).reshape(-1, 2)
     if not np.any(waveData.get_distMat()):
-        sensors.regularGrid(waveData)
+        sensors.regularGrid(waveData, positions)
         distMat = waveData.get_distMat()
         print("Warning: No Distance Matrix defined, making regular grid distance matrix on the fly")
     elif waveData.HasRegularLayout:
@@ -38,7 +43,7 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
     nTrials, nXpos, nYpos, nTime = ComplexPhaseData.shape
 
     if not np.any(waveData.get_channel_positions()):
-        sensors.distmat_to_2d_coordinates(waveData)
+        sensors.distmat_to_2d_coordinates_MDS(waveData)
     X = waveData.get_channel_positions()[:, 0]
     Y = waveData.get_channel_positions()[:, 1]
     pixelspacing = distMat[0, 1]
@@ -49,7 +54,7 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
         output = pool.map(distcorr_process_trial, [(ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing) for ii in range(nTrials)])
 
     else:  # Windows or Mac
-        output = Parallel(n_jobs=cpu_count())(delayed(distcorr_process_trial)(ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing) for ii in range(nTrials))
+        output = Parallel(n_jobs=cpu_count())(delayed(distcorr_process_trial)([ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing]) for ii in range(nTrials))
 
     df = pd.concat(output, ignore_index=True)
     phaseCorrBucket = wa.DataBucket(df, "PhaseDistanceCorrelation", "DataFrame", waveData.get_channel_names())

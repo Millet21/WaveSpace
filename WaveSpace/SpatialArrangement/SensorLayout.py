@@ -19,7 +19,7 @@ import plotly.graph_objects as go
 import joblib
 import platform
 import multiprocessing
-import trimesh
+
 
 #%%
 
@@ -748,9 +748,6 @@ def interpolate_time_point(pos_3d, data_point, function, grid_x, grid_y, grid_z)
     return rbf(grid_x, grid_y, grid_z)
 
 def fake_grid(waveData, surface):
-    import vtk
-    import numpy as np
-
     # 'surface' contains the vtkPolyData surface
 
     # Generate texture coordinates
