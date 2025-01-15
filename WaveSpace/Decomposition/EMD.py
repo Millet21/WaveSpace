@@ -1,22 +1,17 @@
-import emd
-from scipy import signal
-import emd
-import numpy as np
-import dcor
-import pandas as pd
 from WaveSpace.Utils import WaveData as wd
 from WaveSpace.Utils import HelperFuns as hf
+
+import emd
+from scipy import signal
+import numpy as np
 import matplotlib.pyplot as plt
-from scipy import stats, signal
+from scipy import signal
 import multiprocessing
 from itertools import product
 import joblib
 import platform
 emd.logger.set_up()
 emd.logger.set_up(level='CRITICAL')  # supress the warning about too few IMFs
-
-
-
 
 
 def EMD_old(data, nIMFs=7, dataBucketName=""):

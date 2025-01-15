@@ -9,7 +9,7 @@ def perform_cluster_gradient(waveData, dataBucket="FrequencyCluster"):
     hf.assure_consistency(waveData)
     ClusterContacts = waveData.get_data(dataBucket)
     sampleRate = waveData.get_sample_rate()
-    nTrials, nChannels, nTime = data.shape()
+    nTrials, nChannels, nTime = ClusterContacts.shape()
 
     ComplexPhaseData_FreqCluster = waveData.get_data(dataBucket)
     chanpos2D = chanpos[:,:2]
