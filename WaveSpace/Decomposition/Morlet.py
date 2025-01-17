@@ -17,7 +17,7 @@ def freq_domain_wavelet(waveData, dataBucket, freqlist):
     # Compute the TFR using the Morlet wavelet transform
     n_cycles = 5
     tfr = tfr_morlet(data, freqlist, n_cycles)
-    ComplexPhaseDataBucket = wd.DataBucket(tfr, "ComplexPhaseData", "trl_freq_chan_time")
+    ComplexPhaseDataBucket = wd.DataBucket(tfr, "ComplexPhaseData", "trl_freq_chan_time", waveData.get_channel_names())
     waveData.add_data_bucket(ComplexPhaseDataBucket)
 
 
@@ -83,8 +83,8 @@ def convolution_wavelet(waveData,dataBucket, frequencies, N_cycles=2):
                 phi[trl,freqInd,channel,:] = np.exp(1j*np.angle(fourier_components)) #over w
                 power[trl,freqInd,channel,:] =  np.absolute(fourier_components)
 
-    ComplexPhaseDataBucket = wd.DataBucket(phi, "ComplexPhaseData", "trl_freq_chan_time")
-    PowerDataBucket = wd.DataBucket(power, "Power", "trl_freq_chan_time")
+    ComplexPhaseDataBucket = wd.DataBucket(phi, "ComplexPhaseData", "trl_freq_chan_time",waveData.get_channel_names())
+    PowerDataBucket = wd.DataBucket(power, "Power", "trl_freq_chan_time",waveData.get_channel_names())
     waveData.add_data_bucket(ComplexPhaseDataBucket)
     waveData.add_data_bucket(PowerDataBucket)
 

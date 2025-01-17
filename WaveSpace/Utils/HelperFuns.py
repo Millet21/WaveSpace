@@ -136,7 +136,7 @@ def force_dimord(data,  currentDimord, desiredDimord):
         new_last_dims.insert(0, "trl")
 
     chanshape = ()
-    if not (new_last_dims == last_dims): 
+    if not (new_last_dims == newDims): 
         if (len(new_last_dims) > len(last_dims)): 
             raise Exception("Function requires XY positions")
         if (len(new_last_dims) < len(last_dims)): 

@@ -9,15 +9,15 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt 
 
-def cluster_imfs(waveData, highpass, lowpass, dataBucket="ComplexPhaseData", nIMFs=7, plotting = False): 
+def cluster_imfs(waveData, highpass, lowpass, dataBucket="AnalyticSignal", nIMFs=7, plotting = False): 
     emd.logger.set_up()
     emd.logger.set_up(level='CRITICAL')#supress the warning about too few IMFs
     nIMFs=7    
-    waveData.set_active_data_bucket(dataBucket)
+    waveData.set_active_dataBucket(dataBucket)
     hf.assure_consistency(waveData)
     data = waveData.get_data(dataBucket)
     sampleRate = waveData.get_sample_rate()
-    nTrials, nChannels, nTime = data.shape()
+    _, nTrials, nChannels, nTime = data.shape
     times = np.linspace(0,(data.shape[-1]/sampleRate)-(1/sampleRate),data.shape[-1])
     #make sure histogram doesn't get huge
     if int(np.floor(lowpass-highpass))<30:

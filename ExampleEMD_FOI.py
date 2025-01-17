@@ -68,3 +68,5 @@ waveData.log_history(["Subset","Original = AnalyticSignal"])
 #%%
 waveData.DataBuckets["AnalyticSignalSubset"].set_data(waveData.get_data("AnalyticSignalSubset")[:,:,200:499], "trl_chan_time")
 hf.relative_phase(waveData,  ref=1, dataBucketName = "AnalyticSignalSubset")
+
+waveData.save_to_file("ExampleData/WaveData_EMD")	

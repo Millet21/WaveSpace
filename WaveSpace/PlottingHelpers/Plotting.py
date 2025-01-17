@@ -6,6 +6,7 @@ from scipy.interpolate import griddata
 import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+import pyvista as pv
 
 def init():
      plt.style.use("settings.mplstyle")
@@ -729,7 +730,7 @@ def plot_streamlines(UV, seedpoints):
     v = np.imag(UV)
     # origin = (-(nx - 1) * 1 / 2, -(ny - 1) * 1 / 2, -(nz - 1) * 1 / 2) #Puts origin at centre
     origin = (0, 0, 0)
-    mesh = pv.ImageData(dims=(nx, ny, nz), spacing=(1, 1, 1), origin=origin)
+    mesh = pv.ImageData(dimensions=(nx, ny, nz), spacing=(1, 1, 1), origin=origin)
     vectors = np.zeros((u.shape[0] * u.shape[1], 3))
     for tt in range(UV.shape[2]):
         # Arrange 2d vector-fields in space-time(added 3rd dimension = time)
