@@ -55,7 +55,7 @@ WaveSpace contains 5 modules:
 
 The entire framework is comprehensively documented and includes example scripts to facilitate its adoption.
 
-![WaveSpace Module Overview](docs/images/WaveSpace_overview.png)
+![WaveSpace Module Overview](WaveSpace_overview.png)
 *Figure 1: Overview of WaveSpace modules.*
 
 # Funding
