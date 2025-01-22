@@ -155,7 +155,7 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
     for position in channel_positions:
         # Use KD-tree query to find the closest point in the vert
         distance, index = kdtree.query(position)
-        if distance < .00001:  # Set your desired tolerance value
+        if distance < tolerance:  # Set your desired tolerance value
             vertInd.append(index)
     if len(vertInd)< len(channel_positions):
         print('not all contacts are assigned. Trying again with closest, rather than exact, match')
@@ -171,7 +171,10 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
     seed = np.asarray(vertInd,dtype='int32')
     # # calculate distance
     #the next bit might take long. 
-    triangles = np.reshape(faces, (int(len(faces)/3), 3))
+    if faces.shape[-1] != 3:
+        triangles = np.reshape(faces, (int(len(faces)/3), 3))
+    else:
+        triangles = faces
     distPairs = gdist.distance_matrix_of_selected_points(vert,triangles, seed)
 
     DistMat = np.zeros([len(seed),len(seed)],dtype = np.float64)   
@@ -179,8 +182,6 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
     for ind,contact in enumerate(seed):
         #for convenience later on, make contacts x contacts matrix of distance values
         DistMat[ind,:] = distPairs[contact,seed].toarray()
-
-
 
     if get_extent:
         if isinstance(get_extent, list) and all(isinstance(i, tuple) for i in get_extent):
@@ -250,8 +251,6 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
     data.log_history(["Distance matrix", "distmattype","surfDist"])
     print('distance along surface calculated')
 
-
-
 def find_midline_channels(channel_positions, tolerance=0.1):
     """
     Finds the midline channels in a given set of channel positions.
@@ -293,7 +292,6 @@ def find_midline_channels(channel_positions, tolerance=0.1):
     ax.legend()
     plt.show()
     return sagittal_channels, coronal_channels
-
 
 def plot_distance_along_surface(waveData):
     """Plot the distance matrix on the surface with distance as color"""
