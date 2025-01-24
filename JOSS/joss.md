@@ -64,7 +64,6 @@ This project received funding from the European Research Council (ERC) under the
 
 # Toolbox dependencies
 
-Below are the direct dependencies of WaveSpace. Dependencies of dependencies, as well as requried versions can be found in the environment file.
-
+[Environment file](https://github.com/kpetras/WaveSpace/blob/main/WaveSpaceEnv.yaml)
 
 # References
