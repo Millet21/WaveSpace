@@ -43,15 +43,15 @@ The diversity of methods and implementations found in the literature poses chall
 # Functionality
 WaveSpace contains 5 modules:
 
-    Decomposition: Provides multiple techniques to decompose broadband data into frequency components, including FFT-based methods (e.g., wavelets, filter-Hilbert), empirical mode decomposition (EMD), and generalized phase analysis.
+- Decomposition: Provides multiple techniques to decompose broadband data into frequency components, including FFT-based methods (e.g., wavelets, filter-Hilbert), empirical mode decomposition (EMD), and generalized phase analysis.
 
-    Spatial Arrangement: Includes methods to map 3D sensor positions onto 2D regular grids using approaches including multidimensional scaling (MDS) and isomap, including interpolation options.
+- Spatial Arrangement: Includes methods to map 3D sensor positions onto 2D regular grids using approaches including multidimensional scaling (MDS) and isomap, including interpolation options.
 
-    Wave Analysis: Offers a variety of analysis methods, such as 2D FFT, optical flow analysis, phase gradient methods, and principal component analysis (PCA).
+- Wave Analysis: Offers a variety of analysis methods, such as 2D FFT, optical flow analysis, phase gradient methods, and principal component analysis (PCA).
 
-    Simulation: Functions to simulate traveling and standing waves with both linear and nonlinear properties, as well as incorporating noise.
+- Simulation: Functions to simulate traveling and standing waves with both linear and nonlinear properties, as well as incorporating noise.
 
-    Plotting: Contains visualization tools for each analysis option.
+- Plotting: Contains visualization tools for each analysis option.
 
 The entire framework is comprehensively documented and includes example scripts to facilitate its adoption.
 
