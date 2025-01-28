@@ -36,20 +36,20 @@ bibliography: references.bib
 
 # Statement of need
 
-Oscillatory cortical activity has been found to systematically propagate across space [@zhang_theta_2018]. Various approaches to detect and characterize such spatiotemporal patterns of activity, often referred to as "oscillatory cortical traveling waves (ocTW)," have emerged in the literature. Typically, laboratories develop customized pipelines tailored to their experimental requirements and software platform preferences [@alexander_measurement_2006;@muller_stimulus-evoked_2014;@alamia_alpha_2019;@das_how_2022; but see also; @gutzen_modular_2024; for a notable exception].
+Oscillatory cortical activity has been found to systematically propagate across space [@muller_cortical_2018]. Various approaches to detect and characterize such spatiotemporal patterns of activity, often referred to as "oscillatory cortical traveling waves (ocTW)," have emerged in the literature. Typically, laboratories develop customized pipelines tailored to their experimental requirements and software platform preferences [@alexander_measurement_2006;@muller_stimulus-evoked_2014;@alamia_alpha_2019;@das_how_2022; but see also; @gutzen_modular_2024; for a notable exception].
 
-The diversity of methods and implementations found in the literature poses challenges for researchers, both in selecting the one most suitable for their own studies and in directly comparing the performance of different pipelines. WaveSpace addresses this gap by integrating commonly used strategies into a single modular framework. This framework ensures that modules for preprocessing, data decomposition, spatial arrangement of sensor positions, wave analysis, and evaluation are interchangeable and adhere to a consistent logic. The resulting pipelines are ready-to-use in empirical studies [@petras_locally_2025;@fakche_alpha_2024]   
+The diversity of methods and implementations found in the literature poses challenges for researchers, both in selecting the one most suitable for their own studies and in directly comparing the performance of different pipelines. WaveSpace addresses this gap by integrating commonly used strategies into a single modular framework. This framework ensures that modules for preprocessing, data decomposition, spatial arrangement of sensor positions, wave analysis, and evaluation are interchangeable within the same workflow. The resulting pipelines are ready-to-use in empirical studies [@petras_locally_2025;@fakche_alpha_2024]   
 
 # Functionality
-WaveSpace contains 5 modules:
+WaveSpace contains 5 modules (see figure 1 for module overview):
 
 - Decomposition: Provides multiple techniques to decompose broadband data into frequency components, including FFT-based methods (e.g., wavelets, filter-Hilbert), empirical mode decomposition (EMD), and generalized phase analysis.
 
-- Spatial Arrangement: Includes methods to map 3D sensor positions onto 2D regular grids using approaches including multidimensional scaling (MDS) and isomap, including interpolation options.
+- Spatial Arrangement: Includes methods to map 3D sensor positions onto 2D regular grids using approaches such as multidimensional scaling (MDS) and isomap. Multiple interpolation options are available.
 
 - Wave Analysis: Offers a variety of analysis methods, such as 2D FFT, optical flow analysis, phase gradient methods, and principal component analysis (PCA).
 
-- Simulation: Functions to simulate traveling and standing waves with both linear and nonlinear properties, as well as incorporating noise.
+- Simulation: Functions to simulate traveling and spatially stationary (i.e., standing) waves with both linear and nonlinear properties, as well as incorporating noise.
 
 - Plotting: Contains visualization tools for each analysis option.
 
