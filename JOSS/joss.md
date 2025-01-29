@@ -16,6 +16,9 @@ authors:
     orcid: 0000-0001-5865-921X
     affiliation: 1
   - name: Dennis Croonenberg
+    orcid: 0009-0001-4303-9306
+    equal-contrib: false
+    affiliation: 
   - name: Laura Dugué
     orcid: 0000-0003-3085-1458
     equal-contrib: false
