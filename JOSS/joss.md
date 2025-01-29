@@ -18,7 +18,7 @@ authors:
   - name: Dennis Croonenberg
     orcid: 0009-0001-4303-9306
     equal-contrib: false
-    affiliation: 
+    affiliation: null
   - name: Laura Dugué
     orcid: 0000-0003-3085-1458
     equal-contrib: false
