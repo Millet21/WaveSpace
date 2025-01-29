@@ -27,7 +27,7 @@ authors:
 affiliations:
   - name: Université Paris Cité, INCC UMR 8002, CNRS, F-75006 Paris, France
     index: 1
-  - name: unaffiliated author
+  - name: Independent Researcher, The Netherlands
     index: 2
   - name: Institut Universitaire de France (IUF), Paris, France
     index: 3
