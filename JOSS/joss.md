@@ -33,7 +33,7 @@ affiliations:
     index: 3
 
 
-date: 15 January 2025
+date: 20 February 2025
 bibliography: references.bib
 
 ---
@@ -41,9 +41,9 @@ bibliography: references.bib
 
 # Statement of need
 
-Oscillatory cortical activity has been found to systematically propagate across space [@muller_cortical_2018]. Various approaches to detect and characterize such spatiotemporal patterns of activity, often referred to as "oscillatory cortical traveling waves (ocTW)," have emerged in the literature. Typically, laboratories develop customized pipelines tailored to their experimental requirements and software platform preferences [@alexander_measurement_2006;@muller_stimulus-evoked_2014;@alamia_alpha_2019;@das_how_2022; but see also; @gutzen_modular_2024; for a notable exception].
+Oscillatory cortical activity has been found to systematically propagate across space [@muller_cortical_2018]. Various approaches to detect and characterize such spatiotemporal patterns of activity, often referred to as "oscillatory cortical traveling waves (ocTW)," have emerged in the literature. Typically, laboratories develop customized pipelines tailored to their experimental requirements and software platform preferences [@alexander_measurement_2006; @muller_stimulus-evoked_2014; @alamia_alpha_2019;@das_how_2022; but see also @gutzen_modular_2024 for a notable exception].
 
-The diversity of methods and implementations found in the literature poses challenges for researchers, both in selecting the one most suitable for their own studies and in directly comparing the performance of different pipelines. WaveSpace addresses this gap by integrating commonly used strategies into a single modular framework. This framework ensures that modules for preprocessing, data decomposition, spatial arrangement of sensor positions, wave analysis, and evaluation are interchangeable within the same workflow. The resulting pipelines are ready-to-use in empirical studies [@petras_locally_2025;@fakche_alpha_2024]   
+The diversity of methods and implementations found in the literature poses challenges for researchers, both in selecting the one most suitable for their own studies and in directly comparing the performance of different pipelines. WaveSpace addresses this gap by integrating commonly used strategies into a single modular framework. This framework ensures that modules for preprocessing, data decomposition, spatial arrangement of sensor positions, wave analysis, and evaluation are interchangeable within the same workflow. The resulting pipelines are ready-to-use in empirical studies [@petras_locally_2025;@fakche_alpha_2024].   
 
 # Functionality
 WaveSpace contains 5 modules (see figure 1 for module overview):
@@ -69,6 +69,19 @@ This project received funding from the European Research Council (ERC) under the
 
 # Toolbox dependencies
 
-[Environment file](https://github.com/kpetras/WaveSpace/blob/main/WaveSpaceEnv.yaml)
+Python (3.9.21)
+
+matplotlib (3.9.2)  
+scipy (1.13.1)  
+plotly (5.24.1)  
+pint (0.24.4)  
+pyvista (0.44.2)  
+pandas (2.2.3)  
+scikit-learn (1.6.1)  
+tvb-gdist (2.21)  
+emd (0.8.0)
+
+Optional
+mne (0.16.2)
 
 # References
