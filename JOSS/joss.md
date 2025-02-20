@@ -69,6 +69,19 @@ This project received funding from the European Research Council (ERC) under the
 
 # Toolbox dependencies
 
-[Environment file](https://github.com/kpetras/WaveSpace/blob/main/WaveSpaceEnv.yaml)
+Python (3.9.21)
+
+matplotlib (3.9.2)  
+scipy (1.13.1)  
+plotly (5.24.1)  
+pint (0.24.4)  
+pyvista (0.44.2)  
+pandas (2.2.3)  
+scikit-learn (1.6.1)  
+tvb-gdist (2.21)  
+emd (0.8.0)
+
+Optional
+mne (0.16.2)
 
 # References
