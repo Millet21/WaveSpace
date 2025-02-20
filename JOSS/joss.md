@@ -16,16 +16,21 @@ authors:
     orcid: 0000-0001-5865-921X
     affiliation: 1
   - name: Dennis Croonenberg
+    orcid: 0009-0001-4303-9306
+    equal-contrib: false
+    affiliation: 2
   - name: Laura Dugué
     orcid: 0000-0003-3085-1458
     equal-contrib: false
-    affiliation: "1, 2"
+    affiliation: "1, 3"
 
 affiliations:
   - name: Université Paris Cité, INCC UMR 8002, CNRS, F-75006 Paris, France
     index: 1
-  - name: Institut Universitaire de France (IUF), Paris, France
+  - name: Independent Researcher, The Netherlands
     index: 2
+  - name: Institut Universitaire de France (IUF), Paris, France
+    index: 3
 
 
 date: 15 January 2025
