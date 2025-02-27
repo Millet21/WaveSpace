@@ -1,6 +1,10 @@
 # WaveSpace
 Python tools for the simulation and analysis of cortical traveling waves
 
+## Installation:
+```
+pip install WaveSpace-1.0.0-py3-none-any.whl
+```
 ### Decomposition: 
 Implements various frequency decomposition techniques, such as Fourier and wavelet transforms, Empirical Mode Decomposition (EMD)
 
