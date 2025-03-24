@@ -136,13 +136,3 @@ def warp_snapshot(data, XIn, YIn, phaseoffset=40):
     return diffIm
 
 
-#%%
-from skimage.color import rgb2gray
-import imageio
-# Read the image
-data_array = imageio.imread('/home/kirsten/Pictures/duck.jpg')
-data_array = rgb2gray(data_array)
-data_array = np.repeat(data_array[:, :, np.newaxis], 5, axis=2)
-test = warp_array(data_array,100, 80)
-
-# %%

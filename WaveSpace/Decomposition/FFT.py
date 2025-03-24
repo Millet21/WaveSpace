@@ -3,7 +3,8 @@ from WaveSpace.Utils import WaveData as wd
 from WaveSpace.Utils import HelperFuns as hf
 import numpy as np
 from scipy.fftpack import fft, fftfreq
-from scipy.signal import hann
+from scipy.signal.windows import hann	
+
 #%%
 def hann_fft(waveData, dataBucketName = "", timeStart = [], timeEnd = [], timeStep = 1, freqStart = 0, freqEnd = -1):
     """
