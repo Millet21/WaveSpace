@@ -1,10 +1,9 @@
-__all__ = [
-    "EMD",
-    "FFT.py",
-    "GenPhase",
-    "Hilbert",
-    "Morlet",
-    "FrequencyCluster",
-    "EMD_FOI",
-    "IMFCluster"
-]
+from . import EMD
+from . import FFT
+from . import FrequencyCluster
+from . import GenPhase 
+from . import Hilbert
+from . import IMFCluster
+from . import MEMD_Matlab_translation
+from . import Morlet
+

@@ -2,7 +2,7 @@ from joblib import Parallel, delayed
 import WaveSpace.Utils.HelperFuns as hf
 import WaveSpace.Utils.WaveData as wd
 import numpy as np
-import pycircstat
+
 
 def perform_cluster_gradient(waveData, dataBucket="FrequencyCluster"):
     waveData.set_active_data_bucket(dataBucket)
@@ -50,6 +50,7 @@ def getClusterGradient(ClusterPhase, chanpos2D):
     return local_angle, local_sf, local_corr, local_offset
 
 def circ_lin_regress(phases, coords, theta_r, params):
+    import pycircstat
     """
     Performs 2D circular linear regression.
     This is from https://github.com/john-myers-github/INSULA_RS, and was originally ported from Honghui's matlab code.

@@ -2,7 +2,6 @@ from WaveSpace.Utils import WaveData as wd
 from WaveSpace.Utils import HelperFuns as hf
 
 import matplotlib.pyplot as plt
-import mne
 from scipy.signal import butter, filtfilt
 from scipy.signal import detrend
 from scipy.signal import impulse
@@ -10,6 +9,7 @@ from scipy.signal import firwin
 import numpy as np
 
 def filter_broadband(data,dataBucketName = "", LowCutOff=0, HighCutOff=100,  n_jobs=5):
+    import mne
     '''MNE non-causal filter'''
     if dataBucketName == "":
         dataBucketName = data.ActiveDataBucket
