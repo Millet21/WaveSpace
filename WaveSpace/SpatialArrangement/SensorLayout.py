@@ -1,6 +1,6 @@
 #%%
-import WaveSpace.Utils.WaveData as wd
-import WaveSpace.Utils.HelperFuns as hf
+import Modules.Utils.WaveData as wd
+import Modules.Utils.HelperFuns as hf
 from sklearn.manifold import MDS, Isomap
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
@@ -9,8 +9,7 @@ from scipy.spatial import distance_matrix
 from scipy.spatial.transform import Rotation as R
 from scipy.interpolate import Rbf
 from scipy.linalg import svd
-from scipy.spatial import KDTree
-from scipy.spatial import ConvexHull
+from scipy.spatial import Delaunay, KDTree, ConvexHull
 from matplotlib.path import Path
 import vtk
 import matplotlib.pyplot as plt
@@ -19,7 +18,6 @@ import plotly.graph_objects as go
 import joblib
 import platform
 import multiprocessing
-
 
 #%%
 
@@ -43,7 +41,7 @@ def create_surface_from_points(data, type = 'channels', num_points=1000, plottin
     centroid = np.mean(positions, axis=0)
     # set radius to mean distance from centroid to positions
     radius = np.mean(np.linalg.norm(positions - centroid, axis=1))        
-    if type == 'sphere':
+    if type == 'sphere': #doesn't actually do any projection yet. Fix or use type=channels
         #project electrodes onto sphere
         # get centroid of positions
         # make more points
@@ -63,36 +61,69 @@ def create_surface_from_points(data, type = 'channels', num_points=1000, plottin
         bottom_point[2] -= 2*radius  # Adjust this value to make sure it's below the electrodes
         # Calculate the additional four points
         before_point = bottom_point.copy()
-        before_point[0] -= radius
+        before_point[0] -= radius/4
 
         after_point = bottom_point.copy()
-        after_point[0] += radius
+        after_point[0] += radius/4
 
         left_point = bottom_point.copy()
-        left_point[1] -= radius
+        left_point[1] -= radius/4
 
         right_point = bottom_point.copy()
-        right_point[1] += radius
+        right_point[1] += radius/4
         positions = np.concatenate([positions, [bottom_point, before_point, after_point, left_point, right_point]], axis=0)
-
-    # Create points
+        #sometimes some electrode position is a bit too far in to make it onto the surface. 
+        # so we make a hull defined by the outermost positions and then just move whichever ones are inside the hull
+        # to the closest face on the hull
+        # again, if you have a better idea (not too difficult), please let me know  :)  
+        try:            
+            tri = Delaunay(positions)
+            hull = tri.convex_hull
+            hull_vertices = positions[np.unique(hull.ravel())]
+            
+            for i in range(len(data.get_channel_positions())):
+                if i not in np.unique(hull.ravel()):
+                    # Find nearest hull face
+                    closest_dist = float('inf')
+                    closest_proj = None
+                    
+                    for face in hull:
+                        a, b, c = positions[face]                        
+                        # Simple plane projection
+                        ab = b - a
+                        ac = c - a
+                        normal = np.cross(ab, ac)
+                        proj = positions[i] - normal * (np.dot(positions[i]-a, normal)/np.dot(normal, normal))
+                        
+                        # check if insde face (quick and dirty version)
+                        if (np.dot(np.cross(b-a, proj-a), normal) >= 0 and 
+                            np.dot(np.cross(c-b, proj-b), normal) >= 0 and
+                            np.dot(np.cross(a-c, proj-c), normal) >= 0):
+                            dist = np.linalg.norm(positions[i]-proj)
+                            if dist < closest_dist:
+                                closest_dist = dist
+                                closest_proj = proj
+                    
+                    positions[i] = closest_proj if closest_proj is not None else hull_vertices[
+                        KDTree(hull_vertices).query(positions[i])[1]]
+        except:
+            pass
+    # make points for VTK
     points = vtk.vtkPoints()
     for position in positions:
         points.InsertNextPoint(position)
-    # Create a polydata object
+    # make a polydata object
     polydata = vtk.vtkPolyData()
     polydata.SetPoints(points)
-    # Create a surface from the points
+    # make a surface from the points
     delaunay = vtk.vtkDelaunay3D()
     delaunay.SetInputData(polydata)
     delaunay.Update()
-    # Extract the surface
+    
     surface_filter = vtk.vtkDataSetSurfaceFilter()
     surface_filter.SetInputConnection(delaunay.GetOutputPort())
     surface_filter.Update()
-    # Get the surface data
     PolySurface = surface_filter.GetOutput()
-    # Get the vertices and faces
     vertices = np.array([PolySurface.GetPoint(i) for i in range(PolySurface.GetNumberOfPoints())])
     faces = np.array([PolySurface.GetCell(i).GetPointIds().GetId(j) for i in range(PolySurface.GetNumberOfCells()) for j in range(3)])
 
@@ -114,7 +145,14 @@ def create_surface_from_points(data, type = 'channels', num_points=1000, plottin
                                    y=channel_positions[:, 1],
                                    z=channel_positions[:, 2],
                                    mode='markers',
-                                   marker=dict(size=2, color='blue')))
+                                   marker=dict(size=3, color='blue', opacity=0.8)))
+        
+        # Add scatter plot for vertex locations
+        fig.add_trace(go.Scatter3d(x=vertices[:, 0],
+                                   y=vertices[:, 1],
+                                   z=vertices[:, 2],
+                                   mode='markers',
+                                   marker=dict(size=2, color='red')))
 
         fig.update_layout(scene=dict(xaxis=dict(nticks=4, range=[np.min(vertices),np.max(vertices)],),
                              yaxis=dict(nticks=4, range=[np.min(vertices),np.max(vertices)],),
@@ -122,6 +160,8 @@ def create_surface_from_points(data, type = 'channels', num_points=1000, plottin
                              aspectmode='cube'),
                              width=700,
                              margin=dict(r=20, l=10, b=10, t=10))
+        
+        
         fig.show()   
 
     return Surface, PolySurface
@@ -143,8 +183,6 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
     #some very un-elegant changing of data types because the original ones do not work
     channel_positions = np.array(data.get_channel_positions())
     vert = Surface[0].astype(np.float64)
-    #sometimes we added extra points to the surface to fix the bottom of it. If the surface has more vertices than there are channels,
-
     
     vert = Surface[0].astype(np.float64)
     faces = np.asarray([Surface[1]], dtype='int32').squeeze()
@@ -152,10 +190,13 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
 
     # Find exact vertex matches
     vertInd = []
+    #sometimes we added extra points to the surface to fix the bottom of it (create_surface_from_points). 
+    # If the surface has more vertices than there are channels, we ignore the extra ones by looping ove channel positions,
+    # instead of over vertices
     for position in channel_positions:
         # Use KD-tree query to find the closest point in the vert
         distance, index = kdtree.query(position)
-        if distance < tolerance:  # Set your desired tolerance value
+        if distance < .00001:  # Set your desired tolerance value
             vertInd.append(index)
     if len(vertInd)< len(channel_positions):
         print('not all contacts are assigned. Trying again with closest, rather than exact, match')
@@ -171,10 +212,7 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
     seed = np.asarray(vertInd,dtype='int32')
     # # calculate distance
     #the next bit might take long. 
-    if faces.shape[-1] != 3:
-        triangles = np.reshape(faces, (int(len(faces)/3), 3))
-    else:
-        triangles = faces
+    triangles = np.reshape(faces, (int(len(faces)/3), 3))
     distPairs = gdist.distance_matrix_of_selected_points(vert,triangles, seed)
 
     DistMat = np.zeros([len(seed),len(seed)],dtype = np.float64)   
@@ -182,6 +220,8 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
     for ind,contact in enumerate(seed):
         #for convenience later on, make contacts x contacts matrix of distance values
         DistMat[ind,:] = distPairs[contact,seed].toarray()
+
+
 
     if get_extent:
         if isinstance(get_extent, list) and all(isinstance(i, tuple) for i in get_extent):
@@ -251,6 +291,8 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
     data.log_history(["Distance matrix", "distmattype","surfDist"])
     print('distance along surface calculated')
 
+
+
 def find_midline_channels(channel_positions, tolerance=0.1):
     """
     Finds the midline channels in a given set of channel positions.
@@ -292,6 +334,7 @@ def find_midline_channels(channel_positions, tolerance=0.1):
     ax.legend()
     plt.show()
     return sagittal_channels, coronal_channels
+
 
 def plot_distance_along_surface(waveData):
     """Plot the distance matrix on the surface with distance as color"""
@@ -585,7 +628,7 @@ def interpolate_pos_to_grid(waveData, numGridBins=10, dataBucketName = "", retur
     # Create a mask for grid points inside the convex hull
     grid_points = np.c_[grid_x.ravel(), grid_y.ravel()]
     inside_mask = hull_path.contains_points(grid_points, radius=stretch)
-    print(stretch)
+    print('stretch: ' + str(stretch))
 
     # Reshape the mask to the grid shape
     inside_mask_grid = inside_mask.reshape(grid_x.shape)
@@ -746,6 +789,9 @@ def interpolate_time_point(pos_3d, data_point, function, grid_x, grid_y, grid_z)
     return rbf(grid_x, grid_y, grid_z)
 
 def fake_grid(waveData, surface):
+    import vtk
+    import numpy as np
+
     # 'surface' contains the vtkPolyData surface
 
     # Generate texture coordinates
@@ -805,6 +851,3 @@ def sph2cart(azimuth, polar, radius):
     y = radius * np.sin(polar) * np.sin(azimuth)
     z = radius * np.cos(polar)
     return x, y, z
-
-
-
