@@ -1,0 +1,4 @@
+1. Fix animation function to be speedier (plotting.animate_grid_data)
+2. Fullfield snr ramping onsets and offsets for radial and target waves
+3. Rename rotating waves to spiral waves
+4. Would be nice if rotating/spiral waves would have a center that can be set
