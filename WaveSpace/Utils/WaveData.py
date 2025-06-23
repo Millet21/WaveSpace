@@ -170,7 +170,6 @@ class WaveData():
                 print(f'Pruned {len(trials_to_remove)} trials from dataBucket {bucket}')
                 print(f'New data shape: {self.DataBuckets[bucket]._data.shape}')
         self._trialInfo = [trial for i, trial in enumerate(self._trialInfo) if i not in trials_to_remove]
-)
 
     def log_history(self, log):
         if (not(len(log) >= 2)):
