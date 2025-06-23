@@ -1,6 +1,6 @@
 #%%
-import Modules.Utils.WaveData as wd
-import Modules.Utils.HelperFuns as hf
+import WaveSpace.Utils.WaveData as wd
+import WaveSpace.Utils.HelperFuns as hf
 from sklearn.manifold import MDS, Isomap
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
