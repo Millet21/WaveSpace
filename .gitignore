@@ -47,3 +47,7 @@ WaveSpace/PlottingHelpers/__pycache__/Plotting.cpython-39.pyc
 WaveSpace/Utils/__pycache__/HelperFuns.cpython-39.pyc
 WaveSpace/PlottingHelpers/__pycache__/Plotting.cpython-39.pyc
 WaveSpace/Utils/__pycache__/HelperFuns.cpython-39.pyc
+*.pickle
+*.mp4
+*.cpython-*.pyc
+__pycache__/
