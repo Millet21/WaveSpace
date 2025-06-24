@@ -59,9 +59,6 @@ waveData.add_data_bucket(wd.DataBucket(temp, "NBFiltered", "freq_trl_posx_posy_t
 # get complex timeseries
 hilb.apply_hilbert(waveData, dataBucketName = "NBFiltered")
 
-output_path = os.path.join(path, "Examples/ExampleData/Output")
-waveData.save_to_file(os.path.join(output_path, "ComplexData"))
-
 #plot. Try both frequencies and see for which one the phase makes sense 
 analytic_signal = waveData.DataBuckets["AnalyticSignal"].get_data()[0,0,18,19,:] #dimord is freq_trl_posx_posy_time
 fig, axs = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
@@ -83,17 +80,35 @@ axs[1].grid()
 plt.tight_layout()
 plt.show()
 
-
-#%% Calculate generalized phase
+output_path = os.path.join(path, "Examples/ExampleData/Output")
+waveData.save_to_file(os.path.join(output_path, "ComplexData"))
+#%% We can also do alternative decompositions
+# Generalised phase 
 lowerCutOff = 1
 higherCutOff = 40
 filt.filter_broadband(waveData, "SimulatedData", lowerCutOff, higherCutOff, 5)
-
-
 GenPhase.generalized_phase(waveData, "BBFiltered")
+#plot
+complexSignal = waveData.DataBuckets["ComplexPhaseData"].get_data()[0,18,19,:] #dimord is freq_trl_posx_posy_time
 
+fig, axs = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+# real part and envelope
+axs[0].plot(waveData.get_time(), np.real(complexSignal), label='Real part')
+axs[0].plot(waveData.get_time(), np.abs(complexSignal), label='Envelope', linestyle='--')
+axs[0].set_ylabel('Amplitude')
+axs[0].set_title('Real part and Envelope of Analytic Signal')
+axs[0].legend()
+axs[0].grid()
 
+# phase
+axs[1].plot(waveData.get_time(), np.angle(complexSignal), color='tab:orange')
+axs[1].set_ylabel('Phase (radians)')
+axs[1].set_xlabel('Time (s)')
+axs[1].set_title('Phase of Analytic Signal')
+axs[1].grid()
 
+plt.tight_layout()
+plt.show()
 # %% Empirical mode decomposition (EMD) 
 # If we cannot expect the signal to be well behaved for FFT based approaches, we can use EMD
 # note that this is A LOT slower than Filter + Hilbert
@@ -115,9 +130,10 @@ emd.EMD(waveData,
         stp_cnt=2)
 
 #plot imfs
-#%%
 TrialOfInterest = 0
 SelectedChannel = (1,1)
 IMFOfInterest = 4
 dataInds = (slice(None), TrialOfInterest, SelectedChannel[0], SelectedChannel[1])
 Plotting.plot_imfs(waveData, dataInds, IMFOfInterest)
+
+

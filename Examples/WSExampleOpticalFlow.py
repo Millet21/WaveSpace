@@ -38,7 +38,7 @@ OpticalFlow.create_uv(waveData,
 
 print('optical flow took: ', time.time()-tStart)
 
-trialToPlot = 1
+trialToPlot = 4
 waveData.set_active_dataBucket('UV')
 ani = Plotting.plot_optical_flow(waveData, 
                                 UVBucketName = 'UV',
@@ -46,7 +46,7 @@ ani = Plotting.plot_optical_flow(waveData,
                                 dataInds = (0, trialToPlot, slice(None), slice(None), slice(None)),
                                 plotangle=True,
                                 normVectorLength = True)  
-output_path = os.path.join(path, "Examples/ExampleData/Output")
+output_path = os.path.join(path, "Examples/ExampleData/Output/")
 ani.save( output_path + 'OpticalFlowAfterFilter_Hilbert.gif')
 
 #%%
@@ -57,9 +57,9 @@ motifs = hf.find_wave_motifs(waveData,
                         dataBucketName="UV", 
                         threshold = 0.8, 
                         nTimepointsEdge=cycleLength,
-                        mergeThreshold = 0.99, 
+                        mergeThreshold = 0.8, 
                         minFrames=cycleLength, 
-                        pixelThreshold = 0.4, 
+                        pixelThreshold = 0.6, 
                         magnitudeThreshold=.1,
                         dataInds = (freqInd, slice(None), slice(None), slice(None), slice(None)),
                         Mask = False)
@@ -82,10 +82,10 @@ for ind, motif  in enumerate(motifs):
         motifMap[trial, start_timepoint:end_timepoint] = ind
 
 cmap = mcolors.ListedColormap(['grey', "#8F43D1", "#c50069",'#d67258', '#416ae4', '#378b8c', "#0f3200" ,'#a05195', "#4e2f13", "#3900AB","#b3ff00", "#ff0015", "#0d15ff"])
-bounds = [-1, 0, 1, 2, 3, 4, 5, 7, 8, 9, 10,11]
+bounds = [-1, 0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12]
 norm = mcolors.BoundaryNorm(bounds, cmap.N)
 im =  plt.pcolormesh(motifMap, cmap=cmap, norm=norm)
-
+plt.colorbar()
 # One column per condition
 fig, axs = plt.subplots(1, len(motifs[0:6]), figsize=(12, 6), gridspec_kw={'wspace': 0.3})
 

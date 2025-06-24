@@ -631,7 +631,7 @@ def plot_optical_flow(waveData, PlottingDataBucketName = None, UVBucketName = No
 
     ani = animation.FuncAnimation(plt.gcf(),
                                 AnimateFullStatus, fargs=(plotData, timevec),
-                                frames=nFrames-1, interval=100)
+                                frames=nFrames-1, interval=50)
     return ani
 
 def plot_optical_flow_polar_scatter(waveData, UVBucketName=None, directionalStabilityBucket=None, dataInds=None, windowSize=100):

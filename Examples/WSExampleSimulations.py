@@ -22,7 +22,7 @@ Type =  "PlaneWave" # PlaneWave	 StationaryPulse   TargetWave	RotatingWave	Local
 nTrials = 4
 MatrixSize = 20
 SampleRate= 500
-SimDuration= 2
+SimDuration= 1.6
 
 SpatialFrequency = [0.6,0.6,0.6,0.6]
 TemporalFrequency = [10,10,10,10]
@@ -30,7 +30,7 @@ WaveDirection = [45,45,135,135]
 SimLayout = "grid" # Grid, Radial, Circular
 
 # These options only apply after mixing the wave with noise, for now they will just return a mask to be used later
-WaveOnset = [500,500,500,500] # Onset in ms
+WaveOnset = [300,300,300,300] # Onset in ms
 WaveDuration = 1000 # Duration in ms, note: 
 #After waveduration has passed, the current cycle of the wave will finish
 
@@ -66,10 +66,10 @@ Type = "TargetWave"
 nTrials = 4
 matrixSize = 20
 SampleRate= 500
-SimDuration= 2
+SimDuration= 1.6
 
-CenterX = 9    
-CenterY = 9
+CenterX = 2    
+CenterY = 2
 
 SpatialFrequency = [0.6,0.6,0.6,0.6]
 TemporalFrequency = [10, 10, 10, 10] 
@@ -78,7 +78,7 @@ TemporalFrequency = [10, 10, 10, 10]
 WaveDirection = [-1, -1, 1, 1]  
 
 #initialize data
-WaveOnset =  500
+WaveOnset =  300
 WaveDuration = 1000
 
 targetWave = SimulationFuns.simulate_signal(
@@ -106,10 +106,10 @@ Type = "RotatingWave"
 nTrials = 4
 matrixSize = 20
 SampleRate= 500
-SimDuration= 2
+SimDuration= 1.6
 
-CenterX = 7    
-CenterY = 7
+CenterX = 2    
+CenterY = 2
 
 SpatialFrequency = [0.6,0.6,0.6,0.6]
 TemporalFrequency = [10, 10, 10, 10] 
@@ -118,7 +118,7 @@ TemporalFrequency = [10, 10, 10, 10]
 WaveDirection = [1, 1, -1, -1]  
 
 #initialize data
-WaveOnset =  500
+WaveOnset =  300
 WaveDuration = 1000
 
 spiralWave = SimulationFuns.simulate_signal(
@@ -147,10 +147,10 @@ Type="LocalOscillation"
 nTrials = 4
 matrixSize = 20
 SampleRate= 500
-SimDuration= 2
+SimDuration= 1.6
 
-CenterX = 7    
-CenterY = 7
+CenterX = 2    
+CenterY = 2
 
 SpatialFrequency = [0.6,0.6,0.6,0.6]
 TemporalFrequency = [10, 10, 10, 10] 
@@ -162,7 +162,7 @@ WaveDirection = [1, 1, -1, -1]
 OscillatoryPhase = ["Random","Random","Synched","Synched"]  # Random, Synched
 
 #initialize data
-WaveOnset =  500
+WaveOnset =  300
 WaveDuration = 1000
 
 #Create Oscillators
@@ -181,7 +181,6 @@ localOscillators = SimulationFuns.simulate_signal(
         OscillatorProportion = 0.4
     )
 
-
 SNR = 0.8
 oscillatorNoise = SimulationFuns.simulate_signal("SpatialPinkNoise", nTrials, matrixSize, SampleRate, SimDuration, SimLayout="grid")
 oscillatorWaveData = SimulationFuns.SNRMix(localOscillators, oscillatorNoise, SNR, SimLayout="grid")
@@ -199,7 +198,7 @@ output_path = os.path.join(path, "Examples/ExampleData/Output")
 waveData.save_to_file(os.path.join(output_path, "SimulatedData"))
 
 #%% Plot an example timeseries
-ani = Plotting.animate_grid_data(waveData, DataBucketName="SimulatedData", dataInd=0, probepositions=[(0,15), (5,15), (10,15), (15,15), (19,15), (19,15)])
+ani = Plotting.animate_grid_data(waveData, DataBucketName="SimulatedData", dataInd=4, probepositions=[(0,15), (5,15), (10,15), (15,15), (19,15), (19,15)])
 plot_file = os.path.join(path, "Examples/ExampleData/Output/SimulationAnimation.mp4")
 ani.save(plot_file)
 
