@@ -52,3 +52,4 @@ WaveSpace/Utils/__pycache__/HelperFuns.cpython-39.pyc
 *.cpython-*.pyc
 __pycache__/
 
+Examples/ExampleData/Output/SimulatedData
