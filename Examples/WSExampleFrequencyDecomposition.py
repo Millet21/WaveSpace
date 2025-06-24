@@ -59,6 +59,9 @@ waveData.add_data_bucket(wd.DataBucket(temp, "NBFiltered", "freq_trl_posx_posy_t
 # get complex timeseries
 hilb.apply_hilbert(waveData, dataBucketName = "NBFiltered")
 
+output_path = os.path.join(path, "Examples/ExampleData/Output")
+waveData.save_to_file(os.path.join(output_path, "ComplexData"))
+
 #plot. Try both frequencies and see for which one the phase makes sense 
 analytic_signal = waveData.DataBuckets["AnalyticSignal"].get_data()[0,0,18,19,:] #dimord is freq_trl_posx_posy_time
 fig, axs = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
@@ -85,7 +88,11 @@ plt.show()
 lowerCutOff = 1
 higherCutOff = 40
 filt.filter_broadband(waveData, "SimulatedData", lowerCutOff, higherCutOff, 5)
+
+
 GenPhase.generalized_phase(waveData, "BBFiltered")
+
+
 
 # %% Empirical mode decomposition (EMD) 
 # If we cannot expect the signal to be well behaved for FFT based approaches, we can use EMD
