@@ -14,60 +14,6 @@ emd.logger.set_up()
 emd.logger.set_up(level='CRITICAL')  # supress the warning about too few IMFs
 
 
-def EMD_old(data, nIMFs=7, dataBucketName=""):
-    """Empirical mode decomposition. Wrapper function for emd.sift.mask_sift from emd package.
-    Note that. to speed things up a little, this function uses multiprocessing with numpy arrays. The number of intrinsic
-    mode functions that are actually found in the data may be less than the number of IMFs requested for any given trl/chan combination.
-    Those rows of the output array will be filled with NaNs. If you have a better idea for how to do this, please let me know.
-
-    Args:
-        data (waveData object)
-        nIMFs (int): max number of IMFs to extract. Defaults to 7.
-        dataBucketName (str, optional):Defaults to ""
-
-    Returns: changes the waveData object in place. Adds a new data bucket called "AnalysticSignal" 
-    """
-    
-    # ensure proper bookkeeping of data dimensions
-    if dataBucketName == "":
-        dataBucketName = data.ActiveDataBucket
-    else:
-        data.set_active_dataBucket(dataBucketName)
-
-    hf.assure_consistency(data)
-    currentData = data.DataBuckets[dataBucketName].get_data()
-
-    nTrials, nChans, nTime = currentData.shape
-    complexData = np.full((nTrials, nChans, nIMFs, nTime),
-                          np.nan, dtype=np.complex64)
-    time = data.get_time()
-
-    if platform.system() == 'Linux':
-        with multiprocessing.Pool(processes=multiprocessing.cpu_count()-1) as pool:
-            pairs = [(trl, chn) for trl in range(nTrials) for chn in range(nChans)]
-            results = pool.starmap(EMD_process_trial_channel, [(pair, currentData, nIMFs, time) for pair in pairs])
-    else:
-        with joblib.Parallel(n_jobs=joblib.cpu_count()-1) as parallel:
-            pairs = [(trl, chn) for trl in range(nTrials) for chn in range(nChans)]
-            results = parallel(joblib.delayed(EMD_process_trial_channel)(pair, currentData, nIMFs, time) for pair in pairs)
-
-    for pair, result in zip(pairs, results):
-        trl, chn = pair
-        complexData[trl, chn, :result.shape[0], :] = result
-
-    complexDataBucket = wd.DataBucket(complexData, "AnalyticSignal", "trl_chan_imf_time",
-                                      data.DataBuckets[data.ActiveDataBucket].get_channel_names())
-    data.add_data_bucket(complexDataBucket)
-    data.log_history(["Phase estimate", "EMD", "nIMFS: ", nIMFs])
-
-def EMD_process_trial_channel(pair, currentData, nIMFs, time):
-    trl, chn = pair
-    imf = emd.sift.mask_sift(
-        currentData[trl, chn, :], max_imfs=nIMFs, verbose="CRITICAL")
-    analytic_signal = signal.hilbert(imf, axis=0)
-    #maxAmpind = np.nanargmax(np.median(analytic_signal, axis=0))    
-    return analytic_signal.T
-
 # Utility funs________________________________________________
 def FreqAmpPhaseFromAnalytic(waveData, smooth_phase=None, smooth_freq = 3, dataBucketName="", timeRange=(slice(None))):
     """Get the instantaneous frequency, amplitude, and phase from the analytic signal.
@@ -375,8 +321,8 @@ def assess_harmonic_criteria(IP, IF, IA, num_segments=None, base_imf=None, print
 
     # KP added: set some criteria for when to merge IMFs, return indices of IMFs that meet criteria
     # loop over the IMFs that are not the base
-    condition = (df['Integer IF p-value'] < .01)      \
-        & (df['af < 1 p-value'] < .01)      \
+    condition = (df['Integer IF p-value'] < .01) \
+        & (df['af < 1 p-value'] < .01) \
         & (df['DistCorr p-value'] < .01)
     HarmonicInds = df.index.values[condition]
     return HarmonicInds
@@ -531,7 +477,7 @@ def EMD(waveData, nIMFs=7, dataBucketName="", noiseVar = 0.05, n_noiseChans = 10
 
         for pair, result in zip(pairs, results):
             trl, chn = pair
-            complexData[:result.shape[0],trl, chn, :] = result
+            complexData[:result.shape[0],trl, chn, :] = result[:nIMFs]
 
     if hasBeenReshaped:
         complexData = np.reshape(complexData, (nIMFs,*origShape))

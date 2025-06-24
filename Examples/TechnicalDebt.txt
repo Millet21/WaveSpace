@@ -1,4 +1,9 @@
+1. Write Unit test for force dimord function cases:
+    - freq_trl_posx_posy_time > trl_chan_time
+    - Even more leading dimensions (before posx or chan)
+    
 1. Fix animation function to be speedier (plotting.animate_grid_data)
 2. Fullfield snr ramping onsets and offsets for radial and target waves
 3. Rename rotating waves to spiral waves
 4. Would be nice if rotating/spiral waves would have a center that can be set
+7. Make Nice comments on the entire example

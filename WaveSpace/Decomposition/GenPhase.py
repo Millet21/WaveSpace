@@ -23,31 +23,28 @@ def naninterp(xp):
     return si.pchip_interpolate(nonnan_indices,xp_nonnan,nan_indices)
   	
    
-def generalized_phase(data, dataBucket = ''):
+def generalized_phase(waveData, dataBucketName = ''):
     reshape = False
     # % parameters
-    hf.assure_consistency(data)
-    if dataBucket == '':
-        active_data = data.get_active_data()
+    if dataBucketName == "":
+        dataBucketName = waveData.ActiveDataBucket
     else:
-        active_data = data.get_data(dataBucket)
-    if len(active_data.shape) > 3:
-        shape = active_data.shape
-        reshape = True
-        active_data = np.reshape(active_data,(shape[0], shape[1]*shape[2], shape[3]))
-    if len(active_data.shape) == 2:
-        # check if 
-        assert hasattr(active_data[0,0], "__len__")       
-
+        waveData.set_active_dataBucket(dataBucketName)
+    hf.assure_consistency(waveData)
+    currentDimord= waveData.DataBuckets[waveData.ActiveDataBucket].get_dimord()
+    currentData = waveData.get_data(waveData.ActiveDataBucket)
+    oldshape = currentData.shape
+    hasBeenReshaped, currentData =  hf.force_dimord(currentData, currentDimord , "trl_chan_time")
+    
     nwin = 3
-    trials, nChan, npts = active_data.shape
-    outcome = np.zeros(active_data.shape, dtype=complex)
+    trials, nChan, npts = currentData.shape
+    outcome = np.zeros(currentData.shape, dtype=complex)
     for trialNr in range(trials):
     # % init
-        dt = 1 / data.get_sample_rate()
+        dt = 1 / waveData.get_sample_rate()
 
         # % analytic signal representation (single-sided Fourier approach, cf. Marple 1999)
-        x = active_data[trialNr,:,:].T
+        x = currentData[trialNr,:,:].T
         xo = np.fft.fft(x, n=npts, axis=0)
         h = np.zeros(npts)
         if npts > 0 and npts % 2 == 0:
@@ -102,9 +99,10 @@ def generalized_phase(data, dataBucket = ''):
                 ph[ii:] = p[0:ph.shape[1]]
         #
         outcome[trialNr,:] = md * np.exp( 1j * ph )
-    if reshape:
-        outcome = np.reshape(outcome,(shape[0], shape[1], shape[2], shape[3]))
-        dataBucket = wd.DataBucket(outcome, "ComplexPhaseData", "trl_posx_posy_time", data.DataBuckets[data.ActiveDataBucket].get_channel_names())
-    else:
-        dataBucket = wd.DataBucket(outcome, "ComplexPhaseData", "trl_chan_time", data.DataBuckets[data.ActiveDataBucket].get_channel_names())
-    data.add_data_bucket(dataBucket)
+        # reshape original data
+    dataBucket = wd.DataBucket(outcome, "ComplexPhaseData", currentDimord, waveData.DataBuckets[waveData.ActiveDataBucket].get_channel_names())
+    if hasBeenReshaped:
+        dataBucket.reshape(oldshape, currentDimord)  
+
+    waveData.add_data_bucket(dataBucket)  
+    

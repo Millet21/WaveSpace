@@ -13,15 +13,20 @@ from WaveSpace.PlottingHelpers import Plotting
 from WaveSpace.Utils import HelperFuns as hf
 from WaveSpace.Utils import ImportHelpers
 from WaveSpace.Preprocessing import Filter as filt
-
+from WaveSpace.Decomposition import Hilbert as hilb
+from WaveSpace.Decomposition import EMD as emd
+from WaveSpace.Utils import WaveData as wd
+from WaveSpace.Decomposition import GenPhase 
 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import welch
 
-#%% Load some simulated data
+# Load some simulated data
 dataPath  = os.path.join(path, "Examples/ExampleData/Output") 
 waveData = ImportHelpers.load_wavedata_object(dataPath + "/SimulatedData")
+
+#%%
 #waves were simulated at 10Hz. We can confirm that by plotting the PSD (for each trial-type)
 trialInfo = waveData.get_trialInfo() #this contains the condition name for each trial
 unique_conds = np.unique(trialInfo)
@@ -50,7 +55,62 @@ for freqInd, freq in enumerate([10, 15]):
 
 
 temp = np.stack((waveData.DataBuckets["10"].get_data(), waveData.DataBuckets["15"].get_data()),axis=0)
-waveData.add_data_bucket(wd.DataBucket(temp, "NBFiltered", "freq_trl_chan_time", waveData.get_channel_names()))
-
+waveData.add_data_bucket(wd.DataBucket(temp, "NBFiltered", "freq_trl_posx_posy_time", waveData.get_channel_names()))
 # get complex timeseries
 hilb.apply_hilbert(waveData, dataBucketName = "NBFiltered")
+
+#plot. Try both frequencies and see for which one the phase makes sense 
+analytic_signal = waveData.DataBuckets["AnalyticSignal"].get_data()[0,0,18,19,:] #dimord is freq_trl_posx_posy_time
+fig, axs = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+# real part and envelope
+axs[0].plot(waveData.get_time(), np.real(analytic_signal), label='Real part')
+axs[0].plot(waveData.get_time(), np.abs(analytic_signal), label='Envelope', linestyle='--')
+axs[0].set_ylabel('Amplitude')
+axs[0].set_title('Real part and Envelope of Analytic Signal')
+axs[0].legend()
+axs[0].grid()
+
+# phase
+axs[1].plot(waveData.get_time(), np.angle(analytic_signal), color='tab:orange')
+axs[1].set_ylabel('Phase (radians)')
+axs[1].set_xlabel('Time (s)')
+axs[1].set_title('Phase of Analytic Signal')
+axs[1].grid()
+
+plt.tight_layout()
+plt.show()
+
+
+#%% Calculate generalized phase
+lowerCutOff = 1
+higherCutOff = 40
+filt.filter_broadband(waveData, "SimulatedData", lowerCutOff, higherCutOff, 5)
+GenPhase.generalized_phase(waveData, "BBFiltered")
+
+# %% Empirical mode decomposition (EMD) 
+# If we cannot expect the signal to be well behaved for FFT based approaches, we can use EMD
+# note that this is A LOT slower than Filter + Hilbert
+
+#We cut down the data to a small region to speed up the example
+waveData.DataBuckets["SimulatedData"].set_data(waveData.get_data("SimulatedData")[0:2,10:14,10:14,:], "trl_posx_posy_time")
+
+emd.EMD(waveData, 
+        siftType = 'masked_sift',
+        nIMFs=7, 
+        dataBucketName="SimulatedData", 
+        noiseVar = 0.05, 
+        n_noiseChans = 10, 
+        ndir=None, 
+        stp_crit ='stop', 
+        sd=0.075, 
+        sd2=0.75, 
+        tol=0.075,
+        stp_cnt=2)
+
+#plot imfs
+#%%
+TrialOfInterest = 0
+SelectedChannel = (1,1)
+IMFOfInterest = 4
+dataInds = (slice(None), TrialOfInterest, SelectedChannel[0], SelectedChannel[1])
+Plotting.plot_imfs(waveData, dataInds, IMFOfInterest)

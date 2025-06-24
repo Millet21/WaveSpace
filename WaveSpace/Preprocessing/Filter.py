@@ -21,15 +21,14 @@ def filter_broadband(data,dataBucketName = "", LowCutOff=0, HighCutOff=100,  n_j
     origShape = currentData.shape
     hasBeenReshaped, currentData =  hf.force_dimord(currentData, origDimord , "trl_chan_time")
 
-    NewData = mne.filter.filter_data(data = data.get_active_data(),sfreq = data.get_sample_rate(),l_freq = LowCutOff, h_freq= HighCutOff, n_jobs=n_jobs)
+    NewData = mne.filter.filter_data(data = currentData,sfreq = data.get_sample_rate(),l_freq = LowCutOff, h_freq= HighCutOff, n_jobs=n_jobs)
     dataBucket = wd.DataBucket(NewData, "BBFiltered", data.DataBuckets[data.ActiveDataBucket].get_dimord(), data.get_channel_names())
     # reshape original data
     if hasBeenReshaped:
-        data.DataBuckets[dataBucketName].reshape(origShape, origDimord)  
-        data.add_data_bucket(dataBucket)  
-        # reshape last bucket
-        data.DataBuckets[dataBucketName].reshape(origShape, origDimord)   
-        data.log_history(["Broadband Filter", "filt",LowCutOff, HighCutOff])
+        dataBucket.reshape(origShape, origDimord)  
+
+    data.add_data_bucket(dataBucket)    
+    data.log_history(["Broadband Filter", "filt",LowCutOff, HighCutOff])
 
 def filter_notch(data, dataBucketName = "", LineNoiseFreq = 50, n_jobs=5):
     '''MNE non-causal filter'''

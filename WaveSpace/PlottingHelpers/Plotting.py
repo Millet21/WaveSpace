@@ -15,8 +15,7 @@ def getProbeColor(index, totalProbes):
     #cmap = plt.cm.hsv
     cmap = plt.cm.ocean
     return cmap(index/totalProbes) 
-
-# 
+ 
 def plotfft_zoomed(fft_abs, sfreq, minFreq, maxFreq, title, scale='linear'):
     
     nChan, nTimepoints = fft_abs.shape
@@ -35,7 +34,7 @@ def plotfft_zoomed(fft_abs, sfreq, minFreq, maxFreq, title, scale='linear'):
     #plt.show()
     return plt  
 
-def plot_imfs(imfs, IMFofInterest, time):
+def plot_imfs(waveData, dataInds = (0), IMFofInterest = 1):
     """Plots the imfs and phase of the IMF of interest
     Parameters
     ----------
@@ -47,9 +46,12 @@ def plot_imfs(imfs, IMFofInterest, time):
         The time vector for the imfs
     """
     import emd
+    time = waveData.get_time()
+    imfs = waveData.get_data("AnalyticSignal")[dataInds]    
+    imfs = imfs.T
     IP = np.angle(imfs[:,IMFofInterest])  
     # remove any imfs that are NaN
-    imfs = imfs[:,~np.isnan(imfs[0,:])]
+    imfs = imfs[:,~np.isnan(imfs[0,:])]    
     emd.plotting.plot_imfs(imfs=imfs, time_vect=time, cmap=True, xlabel = 'Time (seconds)')
     f1 = plt.gcf()
     f2 = plt.figure(figsize= [16, 3])
@@ -516,7 +518,6 @@ def plot_geodesic_distance_on_surface(vertices, faces, sensor_positions, path, c
     fig = go.Figure(data=plotData, layout=layout)
     fig.show()
 
-
 def plot_topomap(waveData, dataBucketName=None, dataInds=None,timeInds= None, trlInd = None, type = None):
     """Plots a topomap of the data
     Args:
@@ -561,8 +562,6 @@ def plot_topomap(waveData, dataBucketName=None, dataInds=None,timeInds= None, tr
     else:
         img = plt.imshow(grid_z.T, extent=(pos_2d[:, 0].min(), pos_2d[:, 0].max(), pos_2d[:, 1].min(), pos_2d[:, 1].max()), origin='lower')
     plt.colorbar(img)
- 
-        
 
 def plot_optical_flow(waveData, PlottingDataBucketName = None, UVBucketName = None, dataInds = None,plotangle = False, normVectorLength=False):
     """Plots the optical flow data
@@ -796,20 +795,4 @@ def plot_polar_histogram(waveData, DataBucketName, dataInds=None):
 
     return fig
 
-# def plot_opticalFlow_velocity_profile(waveData, UVBucketName, dataInds=None):
-#     """Plots a profile of the optical flow velocity
-#     Args:
-#         waveData: WaveData object
-#         UVBucketName: name of the data bucket with the uv data. Defaults to active data bucket
-#         dataInds: tuple with indices of data to plot e.g.:(freqbin,trial). Dimensions after indexing should be posx_posy_time
-#     """
-#     if UVBucketName is None:
-#         UVBucketName = waveData.ActiveDataBucket
-#     # Ensure consistency
-#     hf.assure_consistency(waveData)
 
-#     # Get the data
-#     UV = waveData.DataBuckets[UVBucketName].get_data()[dataInds]
-
-
-# #     return fig
