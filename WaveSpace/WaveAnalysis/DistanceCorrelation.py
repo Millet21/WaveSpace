@@ -11,27 +11,44 @@ from multiprocessing import Pool, cpu_count
 from joblib import Parallel, delayed
 
 def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngle=np.pi, tolerance=0.2):
-    #Python implementation of: https://github.com/mullerlab/generalized-phase.git
+    """
+    Calculate the distance correlation for wave data.
+
+    Python implementation of: https://github.com/mullerlab/generalized-phase.git
+
+    Parameters
+    ----------
+    waveData : WaveData object
+    dataBucketName : str, optional
+        Name of the data bucket to use (defaults to the active data bucket). Data in Bucket needs to be complex.
+    evaluationAngle : float, optional
+        Phase angle (in radians) that triggers the evaluation point (default: np.pi).
+    tolerance : float, optional
+        Numerical tolerance for phase angle matching (default: 0.2).
+    
+    Notes
+    -----
+    Needs a distance matrix to be defined in the WaveData object. See SpatialArrangement if not already there.  
+    """
+    
+    #sanity checks:
     if  dataBucketName == "":
         dataBucketName =  waveData.ActiveDataBucket
     else:
         waveData.set_active_dataBucket(dataBucketName)
-
-    if not waveData.get_data(dataBucketName).dtype == complex:
-        raise TypeError("Data needs to be complex")
-
+    
     hf.assure_consistency(waveData)
-    hf.squareSpatialPositions(waveData)
-    grid_x, grid_y = sensors.interpolate_pos_to_grid(
-    waveData, 
-    numGridBins=15)
 
-    # make new distMat based on the interpolated grid
-    positions = np.dstack((grid_x, grid_y)).reshape(-1, 2)
+    ComplexPhaseData = waveData.get_data(dataBucketName)
+    origDimord = waveData.DataBuckets[dataBucketName].get_dimord()
+    origShape = ComplexPhaseData.shape
+    hasBeenReshaped, ComplexPhaseData =  hf.force_dimord(ComplexPhaseData, origDimord , "trl_posx_posy_time")
+
+    if not ComplexPhaseData.dtype == complex:
+        raise TypeError("Data needs to be complex") 
+
     if not np.any(waveData.get_distMat()):
-        sensors.regularGrid(waveData, positions)
-        distMat = waveData.get_distMat()
-        print("Warning: No Distance Matrix defined, making regular grid distance matrix on the fly")
+        raise TypeError("No Distance Matrix defined. Use SpatialArrangement tools to make one")
     elif waveData.HasRegularLayout:
         distMat = waveData.get_distMat()
         if not sensors.is_regular_grid_2d(distMat):
@@ -39,7 +56,7 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
     else:
         raise RuntimeError("Distance Matrix not found or not regular")
 
-    ComplexPhaseData = waveData.get_data(dataBucketName)
+
     nTrials, nXpos, nYpos, nTime = ComplexPhaseData.shape
 
     if not np.any(waveData.get_channel_positions()):
@@ -49,7 +66,7 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
     pixelspacing = distMat[0, 1]
     output = list()
 
-    if os.name == 'posix':  # This is a Unix system
+    if os.name == 'posix':  # Unix 
         pool = Pool(cpu_count())
         output = pool.map(distcorr_process_trial, [(ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing) for ii in range(nTrials)])
 
