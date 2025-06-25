@@ -7,3 +7,6 @@
 3. Rename rotating waves to spiral waves
 4. Would be nice if rotating/spiral waves would have a center that can be set
 7. Make Nice comments on the entire example
+81. Go through plotting functions, delete and include as necessary
+b. do a race between optical flow functions. (IF the results are the same but one is faster, the other one goes)
+x. Make genphase nice colored figure as seen in  https://camo.githubusercontent.com/48a0f590335430e4053f18045247b33d6db70cd54c9ea25534cdf8ca4da14877/68747470733a2f2f6d756c6c65726c61622e63612f6173736574732f696d672f67702d64656d6f2f67705f64656d6f2e706e67

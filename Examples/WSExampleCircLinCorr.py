@@ -18,6 +18,7 @@ from WaveSpace.PlottingHelpers import Plotting
 from WaveSpace.Utils import HelperFuns as hf
 from WaveSpace.Utils import ImportHelpers
 from WaveSpace.WaveAnalysis import DistanceCorrelation
+from WaveSpace.SpatialArrangement import SensorLayout as sensors
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,5 +30,13 @@ dataPath  = os.path.join(path, "Examples/ExampleData/Output")
 waveData = ImportHelpers.load_wavedata_object(dataPath + "/ComplexData")
 
 #%% 
+# we already know that our data is on a regular grid because we generated it that way
+# so we can simply use the channel positions to create a distance matrix
+
+sensors.regularGrid(waveData)
+
+#%% 
 #find potential wave starting points 
 DistanceCorrelation.calculate_distance_correlation(waveData, dataBucketName = "AnalyticSignal", evaluationAngle=np.pi, tolerance=0.2)
+
+# %%

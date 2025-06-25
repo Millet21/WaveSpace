@@ -42,7 +42,8 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
     ComplexPhaseData = waveData.get_data(dataBucketName)
     origDimord = waveData.DataBuckets[dataBucketName].get_dimord()
     origShape = ComplexPhaseData.shape
-    hasBeenReshaped, ComplexPhaseData =  hf.force_dimord(ComplexPhaseData, origDimord , "trl_posx_posy_time")
+    desiredDimord = "trl_posx_posy_time"
+    hasBeenReshaped, ComplexPhaseData =  hf.force_dimord(ComplexPhaseData, origDimord , desiredDimord)
 
     if not ComplexPhaseData.dtype == complex:
         raise TypeError("Data needs to be complex") 
@@ -56,9 +57,7 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
     else:
         raise RuntimeError("Distance Matrix not found or not regular")
 
-
     nTrials, nXpos, nYpos, nTime = ComplexPhaseData.shape
-
     if not np.any(waveData.get_channel_positions()):
         sensors.distmat_to_2d_coordinates_MDS(waveData)
     X = waveData.get_channel_positions()[:, 0]
@@ -74,9 +73,25 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
         output = Parallel(n_jobs=cpu_count())(delayed(distcorr_process_trial)([ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing]) for ii in range(nTrials))
 
     df = pd.concat(output, ignore_index=True)
+    if hasBeenReshaped:
+        origDimordList = str.split(origDimord, '_')
+        groupDims  = [dim for dim in origDimordList if not (dim == "posx" or dim =="posy" or dim == "time")]
+        groupDimSizes = origShape[:len(groupDims)]
+        multi_indices  = np.array(np.unravel_index(np.arange(ComplexPhaseData.shape[0]), groupDimSizes)).T
+        for ind, dim in enumerate(groupDims):
+                df.insert(0,dim,0)
+
+        for TargetTrialInd, currentIndex in enumerate(multi_indices):
+            indices = df["trialind"] == TargetTrialInd
+            for ind, dim in enumerate(groupDims):
+                df.loc[indices, dim] = currentIndex[ind]
+        df = df.drop(columns = "trialind")
+    else:
+        df = df.rename(columns={"trialind":"trl"})  
+          
     phaseCorrBucket = wa.DataBucket(df, "PhaseDistanceCorrelation", "DataFrame", waveData.get_channel_names())
     waveData.add_data_bucket(phaseCorrBucket)
-
+    
 
 def distcorr_process_trial(args):
     ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing = args
@@ -92,8 +107,6 @@ def distcorr_process_trial(args):
                      'sourcepointsY': source[1], 'evaluationpoints': ep})
 
     return df
-
-
 
 def phase_dist_corr(ph, source, pixelSpacing):
     """correlation of phase with distance
@@ -156,8 +169,6 @@ def find_evaluation_points(complexPhaseData, evaluationAngle, tolerance):
     dr= np.array(dr)+1
     ep = dr[0, np.abs(r[dr[0]]) <tolerance]
     return ep
-
-
 
 def find_source_points(data, X, Y,evaluationPoints, dx, dy ):
     # % 
