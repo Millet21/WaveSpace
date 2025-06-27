@@ -47,15 +47,17 @@ for cond in unique_conds:
 #%% Filter Hilbert approach
 # we filter the data narrowly around our frequency of interest (10Hz) and then apply the Hilbert transform to get the analytic signal.
 # Note that this only makes sense if we **already know** that there is a narrowband oscillation at the frequency of interest. 
-# To demonstrate this, we will filter the data at 15Hz as well.
+# To demonstrate this, we will filter the data at 17Hz as well.
 
-for freqInd, freq in enumerate([10, 15]):  
+for freqInd, freq in enumerate([10, 17]):  
     filt.filter_narrowband(waveData, dataBucketName = "SimulatedData", LowCutOff=freq-1, HighCutOff=freq+1, type = "FIR", order=100, causal=False)
-    waveData.DataBuckets[str(freq)] =  waveData.DataBuckets.pop("NBFiltered")
+    waveData.DataBuckets[str(freq)] =  waveData.DataBuckets.pop("NBFiltered") #Rename 
 
-
-temp = np.stack((waveData.DataBuckets["10"].get_data(), waveData.DataBuckets["15"].get_data()),axis=0)
+temp = np.stack((waveData.DataBuckets["10"].get_data(), waveData.DataBuckets["17"].get_data()),axis=0) #Stack into single filtered databucket
 waveData.add_data_bucket(wd.DataBucket(temp, "NBFiltered", "freq_trl_posx_posy_time", waveData.get_channel_names()))
+#remove the individual filtered data
+waveData.delete_data_bucket("10")
+waveData.delete_data_bucket("17")
 # get complex timeseries
 hilb.apply_hilbert(waveData, dataBucketName = "NBFiltered")
 
@@ -88,13 +90,13 @@ higherCutOff = 40
 filt.filter_broadband(waveData, "SimulatedData", lowerCutOff, higherCutOff, 5)
 GenPhase.generalized_phase(waveData, "BBFiltered")
 #plot
-complexSignal = waveData.DataBuckets["ComplexPhaseData"].get_data()[0,18,19,:] #dimord is freq_trl_posx_posy_time
-bbFiltered = waveData.DataBuckets["BBFiltered"].get_data()[0,18,19,:]
+complexSignal = waveData.DataBuckets["ComplexPhaseData"].get_data()[0,0,0,:] #dimord is freq_trl_posx_posy_time
+origSignal = waveData.DataBuckets["SimulatedData"].get_data()[0,0,0,:]
 
 fig, axs = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 # real part and envelope
 axs[0].plot(waveData.get_time(), np.real(complexSignal), label='Real part')
-axs[0].plot(waveData.get_time(), bbFiltered, label='Envelope', linestyle='--')
+axs[0].plot(waveData.get_time(), origSignal, label='Envelope', linestyle='--')
 axs[0].set_ylabel('Amplitude')
 axs[0].set_title('Real part and Envelope of Analytic Signal')
 axs[0].legend()
@@ -113,12 +115,8 @@ plt.tight_layout()
 plt.show()
 
 #alternative plot closer to the figure shown in # https://github.com/mullerlab/generalized-phase
-from matplotlib.collections import LineCollection
-from scipy.io import loadmat
-mat = loadmat(os.path.join(dataPath, "exampleChannel.mat"))
-data = mat['x']
 time = waveData.get_time()
-xw = np.real(bbFiltered)
+xw = np.real(origSignal)
 xgp = complexSignal
 phase = np.angle(xgp)
 fig = plt.figure(figsize=(12.5, 4.2))
@@ -141,13 +139,14 @@ ax1.set_xlabel('Time (s)')
 ax1.set_ylabel('Amplitude (a.u.)')
 ax1.spines['top'].set_visible(False)
 ax1.spines['right'].set_visible(False)
-ax2 = fig.add_axes([0.2116, 0.6976, 0.0884, 0.2000], polar=True)
+ax2 = fig.add_axes([0.1116, 0.6976, 0.0884, 0.2000], polar=True)
 theta = np.linspace(-np.pi, np.pi, 100)
 for i in range(len(theta)-1):
     ax2.plot(theta[i:i+2], [1, 1], color=plt.cm.hsv(norm(theta[i])), linewidth=6)
 ax2.set_yticklabels([])
 ax2.set_xticklabels([])
 ax2.set_axis_off()
+plt.show()
 
 # %% Empirical mode decomposition (EMD) 
 # If we cannot expect the signal to be well behaved for FFT based approaches, we can use EMD

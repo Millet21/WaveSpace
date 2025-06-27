@@ -35,8 +35,22 @@ waveData = ImportHelpers.load_wavedata_object(dataPath + "/ComplexData")
 
 sensors.regularGrid(waveData)
 
-#%% 
-#find potential wave starting points 
-DistanceCorrelation.calculate_distance_correlation(waveData, dataBucketName = "AnalyticSignal", evaluationAngle=np.pi, tolerance=0.2)
+#%%
+DistanceCorrelation.calculate_distance_correlation_GP(waveData, dataBucketName = "AnalyticSignal", evaluationAngle=np.pi, tolerance=0.2)
 
-# %%
+#%% 
+pointRange = range(0,20,2)
+sourcePoints = []
+for i in pointRange:
+    sourcePoints.append([i,i])
+#find potential wave starting points 
+DistanceCorrelation.calculate_distance_correlation(waveData, dataBucketName = "AnalyticSignal", sourcePoints=sourcePoints, pixelSpacing=1)
+
+phaseDistCorr= waveData.get_data("PhaseDistanceCorrelation")
+
+selectedTrial = 4
+for point in sourcePoints:
+    rho = phaseDistCorr.loc[(phaseDistCorr["trialInd"] == selectedTrial) & (phaseDistCorr["sourcePointX"] == point[0]) & (phaseDistCorr["sourcePointY"] == point[1])]
+    plt.plot(rho["rho"].tolist())
+plt.legend([str(sourcePoint) for sourcePoint in sourcePoints])
+plt.show()

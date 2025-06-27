@@ -10,7 +10,47 @@ import os
 from multiprocessing import Pool, cpu_count
 from joblib import Parallel, delayed
 
-def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngle=np.pi, tolerance=0.2):
+def calculate_distance_correlation(waveData, dataBucketName = "", sourcePoints = [], pixelSpacing= 1):
+    if  dataBucketName == "":
+        dataBucketName =  waveData.ActiveDataBucket
+    else:
+        waveData.set_active_dataBucket(dataBucketName)
+    
+    hf.assure_consistency(waveData)
+    ComplexPhaseData = waveData.get_data(dataBucketName)
+    origDimord = waveData.DataBuckets[dataBucketName].get_dimord()
+    origShape = ComplexPhaseData.shape
+    desiredDimord = "trl_posx_posy_time"
+    hasBeenReshaped, ComplexPhaseData =  hf.force_dimord(ComplexPhaseData, origDimord , desiredDimord)
+    nTrials = ComplexPhaseData.shape[0]
+    if os.name == 'posix':  # Unix 
+        pool = Pool(cpu_count())
+        output = pool.map(distcorr_process_trial, [(ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing) for ii in range(nTrials)])
+
+    else:  # Windows or Mac
+        output = Parallel(n_jobs=cpu_count())(delayed(phase_dist_corr_task)([np.angle(ComplexPhaseData[ii]),ii, sourcePoints, pixelSpacing]) for ii in range(nTrials))
+    
+    df = pd.concat(output, ignore_index=True)
+    if hasBeenReshaped:
+        origDimordList = str.split(origDimord, '_')
+        groupDims  = [dim for dim in origDimordList if not (dim == "posx" or dim =="posy" or dim == "time")]
+        groupDimSizes = origShape[:len(groupDims)]
+        multi_indices  = np.array(np.unravel_index(np.arange(ComplexPhaseData.shape[0]), groupDimSizes)).T
+          
+    phaseCorrBucket = wa.DataBucket(df, "PhaseDistanceCorrelation", "DataFrame", waveData.get_channel_names())
+    waveData.add_data_bucket(phaseCorrBucket)
+
+def phase_dist_corr_task(args):
+    data, ii, sourcePoints, pixelSpacing, = args
+    nTimePoints = data.shape[-1]
+    df = DataFrame(columns=['trialInd', 'sourcePointX', 'sourcePointY', 'evaluationPoint', 'rho', 'p'])
+    for sourceIndex, sourcePoint in enumerate(sourcePoints):
+        for timePoint in range(nTimePoints):
+            corr = phase_dist_corr(data[:,:,timePoint], sourcePoint, pixelSpacing)
+            df.loc[len(df)] =  ii, sourcePoint[0], sourcePoint[1], timePoint, corr[0], corr[1]
+    return df
+
+def calculate_distance_correlation_GP(waveData, dataBucketName = "", evaluationAngle=np.pi, tolerance=0.2):
     """
     Calculate the distance correlation for wave data.
 
