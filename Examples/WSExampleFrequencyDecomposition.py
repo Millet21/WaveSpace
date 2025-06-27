@@ -80,26 +80,28 @@ axs[1].grid()
 plt.tight_layout()
 plt.show()
 
-output_path = os.path.join(path, "Examples/ExampleData/Output")
-waveData.save_to_file(os.path.join(output_path, "ComplexData"))
+waveData.save_to_file(os.path.join(dataPath, "ComplexData"))
 #%% We can also do alternative decompositions
-# Generalised phase 
+# Generalised phase (adapted from # https://github.com/mullerlab/generalized-phase)
 lowerCutOff = 1
 higherCutOff = 40
 filt.filter_broadband(waveData, "SimulatedData", lowerCutOff, higherCutOff, 5)
 GenPhase.generalized_phase(waveData, "BBFiltered")
 #plot
 complexSignal = waveData.DataBuckets["ComplexPhaseData"].get_data()[0,18,19,:] #dimord is freq_trl_posx_posy_time
+bbFiltered = waveData.DataBuckets["BBFiltered"].get_data()[0,18,19,:]
 
 fig, axs = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 # real part and envelope
 axs[0].plot(waveData.get_time(), np.real(complexSignal), label='Real part')
-axs[0].plot(waveData.get_time(), np.abs(complexSignal), label='Envelope', linestyle='--')
+axs[0].plot(waveData.get_time(), bbFiltered, label='Envelope', linestyle='--')
 axs[0].set_ylabel('Amplitude')
 axs[0].set_title('Real part and Envelope of Analytic Signal')
 axs[0].legend()
 axs[0].grid()
-
+#note that we do not plot the real and the envelop of an analytic signal here (like we did above). 
+# This is because we did not narrowband filter before genPhase and the envelope of the real signal after genPhase 
+# would look very weird 
 # phase
 axs[1].plot(waveData.get_time(), np.angle(complexSignal), color='tab:orange')
 axs[1].set_ylabel('Phase (radians)')
@@ -109,6 +111,44 @@ axs[1].grid()
 
 plt.tight_layout()
 plt.show()
+
+#alternative plot closer to the figure shown in # https://github.com/mullerlab/generalized-phase
+from matplotlib.collections import LineCollection
+from scipy.io import loadmat
+mat = loadmat(os.path.join(dataPath, "exampleChannel.mat"))
+data = mat['x']
+time = waveData.get_time()
+xw = np.real(bbFiltered)
+xgp = complexSignal
+phase = np.angle(xgp)
+fig = plt.figure(figsize=(12.5, 4.2))
+ax1 = fig.add_axes([0.08, 0.15, 0.7, 0.75])  
+
+ax1.plot(time, xw, linewidth=4, color='k', label='wideband signal')
+
+# Colored phase line
+points = np.array([time, np.real(xgp)]).T.reshape(-1, 1, 2)
+segments = np.concatenate([points[:-1], points[1:]], axis=1)
+norm = plt.Normalize(-np.pi, np.pi)
+lc = LineCollection(segments, cmap='hsv', norm=norm)
+lc.set_array(phase)
+lc.set_linewidth(5)
+ax1.add_collection(lc)
+
+# Normal axes
+ax1.set_xlim([time[0], time[-1]])
+ax1.set_xlabel('Time (s)')
+ax1.set_ylabel('Amplitude (a.u.)')
+ax1.spines['top'].set_visible(False)
+ax1.spines['right'].set_visible(False)
+ax2 = fig.add_axes([0.2116, 0.6976, 0.0884, 0.2000], polar=True)
+theta = np.linspace(-np.pi, np.pi, 100)
+for i in range(len(theta)-1):
+    ax2.plot(theta[i:i+2], [1, 1], color=plt.cm.hsv(norm(theta[i])), linewidth=6)
+ax2.set_yticklabels([])
+ax2.set_xticklabels([])
+ax2.set_axis_off()
+
 # %% Empirical mode decomposition (EMD) 
 # If we cannot expect the signal to be well behaved for FFT based approaches, we can use EMD
 # note that this is A LOT slower than Filter + Hilbert

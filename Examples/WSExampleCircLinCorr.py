@@ -6,7 +6,6 @@ Requires complex data in a regular grid with known (relative) distances between 
 #%%
 import sys
 import os
-import time
 
 # Add the project root directory to the Python path when working with source code, 
 # not necessary when package is installed
@@ -20,6 +19,7 @@ from WaveSpace.Utils import ImportHelpers
 from WaveSpace.WaveAnalysis import DistanceCorrelation
 from WaveSpace.SpatialArrangement import SensorLayout as sensors
 
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
