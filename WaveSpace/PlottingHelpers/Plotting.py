@@ -7,6 +7,7 @@ import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import pyvista as pv
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 def init():
      plt.style.use("settings.mplstyle")
@@ -15,9 +16,58 @@ def getProbeColor(index, totalProbes):
     #cmap = plt.cm.hsv
     cmap = plt.cm.ocean
     return cmap(index/totalProbes) 
+
+def get_color_grid_from_probes(gridsize, probes):
+    if isinstance(gridsize, int):
+        rows, cols = gridsize, gridsize
+    else:
+        rows, cols = gridsize
+
+    total_cells = rows * cols
+    total_probes = len(probes)
+
+    # Fill the grid row-wise with probe colors, repeating or truncating as needed
+    color_grid = np.zeros((rows, cols, 4))  # RGBA shape
+    for i in range(rows):
+        for j in range(cols):
+            if (i, j) in probes:                
+                color = getProbeColor(probes.index((i,j)), total_probes)
+            else:
+                color = (0.5, 0.5, 0.5, 1.0)  # Transparent or black if no more probes
+            color_grid[i, j] = color
+
+    return color_grid
+
+def add_color_grid_legend(ax, color_grid, position=[0.8, 0.8, 2.0, 2.0], border=True):
+    """
+    Add a grid of colored squares using imshow, embedded as an inset into a matplotlib Axes.
+
+    Parameters:
+    - ax: The matplotlib Axes to embed the grid into.
+    - color_grid: 2D array of colors (str or RGB/RGBA tuples), shape (rows, cols).
+    - position: List of [left, bottom, width, height] in Axes fraction coordinates.
+    - border: Whether to show a border around the inset.
+    """
+    # Ensure the grid is in shape (rows, cols, 4)
+    rows, cols = color_grid.shape[:2]
+
+    # Create an inset axis
+    inset_ax = inset_axes(ax, width=position[2], height=position[3],
+                          bbox_to_anchor=(position[0], position[1], 1, 1),
+                          bbox_transform=ax.transAxes, borderpad=0)
+
+    # Use imshow to draw the grid
+    inset_ax.imshow(color_grid, aspect='equal', interpolation='none', origin='lower' )
+
+    # Hide ticks and spines
+    inset_ax.set_xticks([])
+    inset_ax.set_yticks([])
+    for spine in inset_ax.spines.values():
+        spine.set_visible(border)
+
+    return inset_ax
  
-def plotfft_zoomed(fft_abs, sfreq, minFreq, maxFreq, title, scale='linear'):
-    
+def plotfft_zoomed(fft_abs, sfreq, minFreq, maxFreq, title, scale='linear'):    
     nChan, nTimepoints = fft_abs.shape
     spatialFreqAxis = nChan/2 * np.linspace(-1, 1, nChan)
     tempFreqAxis = np.arange(-sfreq/2, sfreq/2, 1/(nTimepoints/sfreq))

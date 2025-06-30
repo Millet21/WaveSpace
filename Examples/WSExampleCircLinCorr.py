@@ -38,19 +38,27 @@ sensors.regularGrid(waveData)
 #%%
 DistanceCorrelation.calculate_distance_correlation_GP(waveData, dataBucketName = "AnalyticSignal", evaluationAngle=np.pi, tolerance=0.2)
 
-#%% 
+#%%
+#find potential wave starting points 
+
 pointRange = range(0,20,2)
 sourcePoints = []
 for i in pointRange:
-    sourcePoints.append([i,i])
-#find potential wave starting points 
+    sourcePoints.append((i,i))
+
 DistanceCorrelation.calculate_distance_correlation(waveData, dataBucketName = "AnalyticSignal", sourcePoints=sourcePoints, pixelSpacing=1)
 
 phaseDistCorr= waveData.get_data("PhaseDistanceCorrelation")
-
+shape = waveData.get_data("AnalyticSignal").shape
 selectedTrial = 4
-for point in sourcePoints:
+fig, ax = plt.subplots(figsize=(8,6))
+for i, point in enumerate(sourcePoints):
     rho = phaseDistCorr.loc[(phaseDistCorr["trialInd"] == selectedTrial) & (phaseDistCorr["sourcePointX"] == point[0]) & (phaseDistCorr["sourcePointY"] == point[1])]
-    plt.plot(rho["rho"].tolist())
-plt.legend([str(sourcePoint) for sourcePoint in sourcePoints])
+    color = Plotting.getProbeColor(i, len(sourcePoints))
+    ax.plot(rho["rho"].tolist(), label =str(point), color=color)
+ax.legend()
+color_grid = Plotting.get_color_grid_from_probes((shape[2],shape[3]), sourcePoints)
+Plotting.add_color_grid_legend(ax, color_grid, position=[0.2, 0.2, 1.5, 1.5])
 plt.show()
+
+# %%
