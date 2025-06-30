@@ -12,9 +12,8 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 def init():
      plt.style.use("settings.mplstyle")
 
-def getProbeColor(index, totalProbes):
+def getProbeColor(index, totalProbes, cmap = plt.cm.ocean):
     #cmap = plt.cm.hsv
-    cmap = plt.cm.ocean
     return cmap(index/totalProbes) 
 
 def get_color_grid_from_probes(gridsize, probes):
