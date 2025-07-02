@@ -21,7 +21,6 @@ def get_color_grid_from_probes(gridsize, probes):
         rows, cols = gridsize, gridsize
     else:
         rows, cols = gridsize
-
     total_cells = rows * cols
     total_probes = len(probes)
 
@@ -34,7 +33,6 @@ def get_color_grid_from_probes(gridsize, probes):
             else:
                 color = (0.5, 0.5, 0.5, 1.0)  # Transparent or black if no more probes
             color_grid[i, j] = color
-
     return color_grid
 
 def add_color_grid_legend(ax, color_grid, position=[0.8, 0.8, 2.0, 2.0], border=True):
