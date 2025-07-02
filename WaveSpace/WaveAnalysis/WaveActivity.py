@@ -2,10 +2,14 @@ import numpy as np
 import WaveSpace.Utils.HelperFuns as hf
 import WaveSpace.Utils.WaveData as wd
 
-def find_wave_activity(waveData, freqList, dataBucket="ComplexPhaseData", nBases=3, ):
-    waveData.ActiveDataBucket = dataBucket
+def find_wave_activity(waveData, freqList, dataBucketName="ComplexPhaseData", nBases=3, ):
+    waveData.ActiveDataBucket = dataBucketName
     hf.assure_consistency(waveData)
-    complexPhaseData = waveData.get_data(dataBucket)
+    complexPhaseData = waveData.get_data(dataBucketName)
+    origDimord = waveData.DataBuckets[dataBucketName].get_dimord()
+    origShape = complexPhaseData.shape
+    desiredDimord = "trl_chan_time"
+    hasBeenReshaped, complexPhaseData =  hf.force_dimord(complexPhaseData, origDimord , desiredDimord)
     nTrials, nChannels, nTime = complexPhaseData.shape
     # Make complex valued Phase/magnitude Timeseries per freq
     #reshape to (trial, time, channel)
@@ -19,7 +23,8 @@ def find_wave_activity(waveData, freqList, dataBucket="ComplexPhaseData", nBases
     waveData.add_data_bucket(fitBucket)
     waveData.add_data_bucket(betasBucket)
 
-def c_TW_bases_betas(phi_cts,nBases=3):#phi complex-valued phase, c cases, t times, s sensors
+def c_TW_bases_betas(phi_cts,nBases=3):
+    #phi complex-valued phase, c cases, t times, s sensors
     phi_Cs = np.asarray(phi_cts.reshape(-1,phi_cts.shape[-1]))
     phi_cent = phi_Cs - phi_Cs.mean(0)
     COV = phi_cent.T.conj()@phi_cent
