@@ -7,18 +7,64 @@ import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import pyvista as pv
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 def init():
      plt.style.use("settings.mplstyle")
 
-def getProbeColor(index, totalProbes):
+def getProbeColor(index, totalProbes, cmap = plt.cm.ocean):
     #cmap = plt.cm.hsv
-    cmap = plt.cm.ocean
     return cmap(index/totalProbes) 
 
-# 
-def plotfft_zoomed(fft_abs, sfreq, minFreq, maxFreq, title, scale='linear'):
-    
+def get_color_grid_from_probes(gridsize, probes):
+    if isinstance(gridsize, int):
+        rows, cols = gridsize, gridsize
+    else:
+        rows, cols = gridsize
+    total_cells = rows * cols
+    total_probes = len(probes)
+
+    # Fill the grid row-wise with probe colors, repeating or truncating as needed
+    color_grid = np.zeros((rows, cols, 4))  # RGBA shape
+    for i in range(rows):
+        for j in range(cols):
+            if (i, j) in probes:                
+                color = getProbeColor(probes.index((i,j)), total_probes)
+            else:
+                color = (0.5, 0.5, 0.5, 1.0)  # Transparent or black if no more probes
+            color_grid[i, j] = color
+    return color_grid
+
+def add_color_grid_legend(ax, color_grid, position=[0.8, 0.8, 2.0, 2.0], border=True):
+    """
+    Add a grid of colored squares using imshow, embedded as an inset into a matplotlib Axes.
+
+    Parameters:
+    - ax: The matplotlib Axes to embed the grid into.
+    - color_grid: 2D array of colors (str or RGB/RGBA tuples), shape (rows, cols).
+    - position: List of [left, bottom, width, height] in Axes fraction coordinates.
+    - border: Whether to show a border around the inset.
+    """
+    # Ensure the grid is in shape (rows, cols, 4)
+    rows, cols = color_grid.shape[:2]
+
+    # Create an inset axis
+    inset_ax = inset_axes(ax, width=position[2], height=position[3],
+                          bbox_to_anchor=(position[0], position[1], 1, 1),
+                          bbox_transform=ax.transAxes, borderpad=0)
+
+    # Use imshow to draw the grid
+    inset_ax.imshow(color_grid, aspect='equal', interpolation='none', origin='lower' )
+
+    # Hide ticks and spines
+    inset_ax.set_xticks([])
+    inset_ax.set_yticks([])
+    for spine in inset_ax.spines.values():
+        spine.set_visible(border)
+
+    return inset_ax
+ 
+def plotfft_zoomed(fft_abs, sfreq, minFreq, maxFreq, title, scale='linear'):    
     nChan, nTimepoints = fft_abs.shape
     spatialFreqAxis = nChan/2 * np.linspace(-1, 1, nChan)
     tempFreqAxis = np.arange(-sfreq/2, sfreq/2, 1/(nTimepoints/sfreq))
@@ -35,7 +81,7 @@ def plotfft_zoomed(fft_abs, sfreq, minFreq, maxFreq, title, scale='linear'):
     #plt.show()
     return plt  
 
-def plot_imfs(imfs, IMFofInterest, time):
+def plot_imfs(waveData, dataInds = (0), IMFofInterest = 1):
     """Plots the imfs and phase of the IMF of interest
     Parameters
     ----------
@@ -47,9 +93,12 @@ def plot_imfs(imfs, IMFofInterest, time):
         The time vector for the imfs
     """
     import emd
+    time = waveData.get_time()
+    imfs = waveData.get_data("AnalyticSignal")[dataInds]    
+    imfs = imfs.T
     IP = np.angle(imfs[:,IMFofInterest])  
     # remove any imfs that are NaN
-    imfs = imfs[:,~np.isnan(imfs[0,:])]
+    imfs = imfs[:,~np.isnan(imfs[0,:])]    
     emd.plotting.plot_imfs(imfs=imfs, time_vect=time, cmap=True, xlabel = 'Time (seconds)')
     f1 = plt.gcf()
     f2 = plt.figure(figsize= [16, 3])
@@ -516,7 +565,6 @@ def plot_geodesic_distance_on_surface(vertices, faces, sensor_positions, path, c
     fig = go.Figure(data=plotData, layout=layout)
     fig.show()
 
-
 def plot_topomap(waveData, dataBucketName=None, dataInds=None,timeInds= None, trlInd = None, type = None):
     """Plots a topomap of the data
     Args:
@@ -561,8 +609,6 @@ def plot_topomap(waveData, dataBucketName=None, dataInds=None,timeInds= None, tr
     else:
         img = plt.imshow(grid_z.T, extent=(pos_2d[:, 0].min(), pos_2d[:, 0].max(), pos_2d[:, 1].min(), pos_2d[:, 1].max()), origin='lower')
     plt.colorbar(img)
- 
-        
 
 def plot_optical_flow(waveData, PlottingDataBucketName = None, UVBucketName = None, dataInds = None,plotangle = False, normVectorLength=False):
     """Plots the optical flow data
@@ -632,7 +678,7 @@ def plot_optical_flow(waveData, PlottingDataBucketName = None, UVBucketName = No
 
     ani = animation.FuncAnimation(plt.gcf(),
                                 AnimateFullStatus, fargs=(plotData, timevec),
-                                frames=nFrames-1, interval=100)
+                                frames=nFrames-1, interval=50)
     return ani
 
 def plot_optical_flow_polar_scatter(waveData, UVBucketName=None, directionalStabilityBucket=None, dataInds=None, windowSize=100):
@@ -796,20 +842,4 @@ def plot_polar_histogram(waveData, DataBucketName, dataInds=None):
 
     return fig
 
-# def plot_opticalFlow_velocity_profile(waveData, UVBucketName, dataInds=None):
-#     """Plots a profile of the optical flow velocity
-#     Args:
-#         waveData: WaveData object
-#         UVBucketName: name of the data bucket with the uv data. Defaults to active data bucket
-#         dataInds: tuple with indices of data to plot e.g.:(freqbin,trial). Dimensions after indexing should be posx_posy_time
-#     """
-#     if UVBucketName is None:
-#         UVBucketName = waveData.ActiveDataBucket
-#     # Ensure consistency
-#     hf.assure_consistency(waveData)
 
-#     # Get the data
-#     UV = waveData.DataBuckets[UVBucketName].get_data()[dataInds]
-
-
-# #     return fig

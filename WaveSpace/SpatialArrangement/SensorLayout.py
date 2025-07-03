@@ -22,11 +22,16 @@ import multiprocessing
 #%%
 
 #Sensor spatial arrangement_____________________________
-def regularGrid(data, pos):
+def regularGrid(waveData):    
+    if waveData.get_2d_coordinates():
+        pos = waveData.get_2d_coordinates()
+    else:
+        print("Warning: data doesn't have 2d coordinates, using a projection of 3d sensor positions")
+        pos = waveData.get_channel_positions()[:,0:2]
     distMat = distance_matrix(pos,pos)
-    data.set_distMat(distMat)
-    data.HasRegularLayout = True
-    data.log_history(["Distance matrix", "distmattype","regularGrid"])
+    waveData.set_distMat(distMat)
+    waveData.HasRegularLayout = is_regular_grid_2d(waveData.get_distMat())
+    waveData.log_history(["Distance matrix", "distmattype","regularGrid"])
 
 def create_surface_from_points(data, type = 'channels', num_points=1000, plotting = False):
     '''Makes a surface from the electrode positions. 
@@ -220,8 +225,6 @@ def distance_along_surface(data, Surface, tolerance = 0.01, get_extent = False, 
     for ind,contact in enumerate(seed):
         #for convenience later on, make contacts x contacts matrix of distance values
         DistMat[ind,:] = distPairs[contact,seed].toarray()
-
-
 
     if get_extent:
         if isinstance(get_extent, list) and all(isinstance(i, tuple) for i in get_extent):
@@ -502,7 +505,6 @@ def distmat_to_2d_coordinates_MDS(waveData):
     scaling_factor = max_geodesic_distance / distance_in_transformed_space
     # Apply the scaling factor
     X_transform *= scaling_factor
-    waveData.set_2D_coordinates(X_transform)
     waveData.set_2D_coordinates(X_transform)
     waveData.log_history(["distmat_to_2d_coordinates", "projectionmethod","MDS"])
 

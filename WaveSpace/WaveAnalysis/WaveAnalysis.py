@@ -23,13 +23,11 @@ def FFT_2D(waveData, channelIndices, lowerBound, upperBound, DataBucketName = ""
         dataIDX = (slice(None), [i[0] for i in channelIndices], [i[1] for i in channelIndices], slice(None))
         filteredData = waveData.get_active_data()[dataIDX]   
         channelPositions = waveData.get_channel_positions()
-        channelNames = [waveData.DataBuckets[waveData.ActiveDataBucket].get_channel_names()[idx[0],idx[1]] for idx in channelIndices]
 
     else:
         if len(shape) == 4:
             raise Exception("one dimensional index used for two dimensional channel data")
         filteredData = waveData.get_active_data()[:,channelIndices,:]  
-        channelNames = [waveData.DataBuckets[waveData.ActiveDataBucket].get_channel_names()[idx] for idx in channelIndices]
     
     # Define the spatial distances and temporal sampling rate
     dist_bw_channels = 1  # distance between channels
@@ -83,7 +81,6 @@ def FFT_2D(waveData, channelIndices, lowerBound, upperBound, DataBucketName = ""
         allReverseTempFreq[trialNr] = bwTempFreq
         allAlongSpatFreq[trialNr] =  AlongSpatFreq
         allReverseSpatFreq[trialNr] = bwSpatFreq
-
     	
     info = {
         'Max Along Power': allMaxAlongvalue,
@@ -93,16 +90,11 @@ def FFT_2D(waveData, channelIndices, lowerBound, upperBound, DataBucketName = ""
         'Spatial Frequency at Max Along': allAlongSpatFreq,
         'Spatial Frequency at Max Reverse': allReverseSpatFreq}
 
-    df = pd.DataFrame.from_dict(info)
-    
-
-
-    fftBucket = wd.DataBucket(allFFT_abs,"FFT_ABS","trl_spatfreq_tempfreq", channelNames)
+    df = pd.DataFrame.from_dict(info)  
+    fftBucket = wd.DataBucket(allFFT_abs,"FFT_ABS","trl_spatfreq_tempfreq", waveData.DataBuckets[waveData.ActiveDataBucket].get_channel_names())
     waveData.add_data_bucket(fftBucket)
-    resultBucket = wd.DataBucket(df, "Result", "2D_FFT", channelNames)
+    resultBucket = wd.DataBucket(df, "Result", "2D_FFT", waveData.DataBuckets[waveData.ActiveDataBucket].get_channel_names())
     waveData.add_data_bucket(resultBucket)
-
-
 
 import copy
 from joblib import Parallel, delayed

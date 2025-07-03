@@ -32,7 +32,7 @@ def assertCorrectWaveSettings(Type, ntrials, waveSettings):
             assert len(item[1])==ntrials, f"Length of supplied array for \"{item[0]}\" must equal amount of trials"
 
 #%%
-def simulate_signal(Type, ntrials, MatrixSize, SampleRate, SimDuration, **waveSettings):
+def simulate_signal(Type, ntrials, MatrixSize, SampleRate, SimDuration, SimLayout= "channels", **waveSettings):
     assertCorrectWaveSettings(Type, ntrials, waveSettings)
     #InitializeDataCubes
     fullData = np.zeros((ntrials,MatrixSize,MatrixSize,int(np.floor(SampleRate*SimDuration))))
@@ -78,9 +78,9 @@ def simulate_signal(Type, ntrials, MatrixSize, SampleRate, SimDuration, **waveSe
         if Type == "FrequencyGradient":
             fullData[TrialNr,:,:,:] = create_frequency_gradient(MatrixSize, SampleRate, SimDuration, SimOption)
        
-    waveData = create_wavedata(fullData, SampleRate, SimDuration, simOptions)  
+    waveData = create_wavedata(fullData, SampleRate, SimDuration, SimLayout, simOptions)  
     if isMaskPresent: 
-        if (len(fullMask.shape)==4):
+        if (len(fullMask.shape)==4 and SimLayout != "grid"):
             fullMask = np.reshape(fullMask,(fullMask.shape[0],fullMask.shape[1]*fullMask.shape[2],fullMask.shape[3]), order='C') 
         dataBucket = wd.DataBucket(fullMask,"Mask", waveData.DataBuckets["SimulatedData"].get_dimord(), waveData.get_channel_names())   
         waveData.add_data_bucket(dataBucket)
@@ -89,12 +89,13 @@ def simulate_signal(Type, ntrials, MatrixSize, SampleRate, SimDuration, **waveSe
 def initialize_data(MatrixSize, SampleRate,SimDuration):
     return np.zeros((MatrixSize,MatrixSize,int(np.floor(SimDuration * SampleRate))))  
 
-def create_wavedata(data, SampleRate,SimDuration, simOptions, name = "SimulatedData"):
+def create_wavedata(data, SampleRate, SimDuration, SimLayout, simOptions, name = "SimulatedData"):
     #flatten channels
     if (len(data.shape)==4):
-        data = np.reshape(data,(data.shape[0],data.shape[1]*data.shape[2],data.shape[3]), order='C') 
+       data = np.reshape(data,(data.shape[0],data.shape[1]*data.shape[2],data.shape[3]), order='C') 
     dimord = "trl_chan_time"
-    waveData = wd.WaveData(sampleRate=SampleRate,time=(0,SimDuration))
+
+    waveData = wd.WaveData(sampleRate=SampleRate, time=(0,SimDuration))
     x_ = np.linspace(0, int(np.sqrt(data.shape[1]-1)), int(np.sqrt(data.shape[1])))
     y_ = np.linspace(0, int(np.sqrt(data.shape[1]-1)), int(np.sqrt(data.shape[1])))
     grid = np.meshgrid(x_, y_ , indexing='xy')
@@ -107,6 +108,9 @@ def create_wavedata(data, SampleRate,SimDuration, simOptions, name = "SimulatedD
     waveData.set_channel_names([str(s) for s in np.arange(len(chanpos))])
     dataBucket = wd.DataBucket(data,name, dimord, waveData.get_channel_names(), unit="AU")
     waveData.add_data_bucket(dataBucket)
+
+    if SimLayout == "grid":
+        hf.squareSpatialPositions(waveData)    
     return waveData
 
 def apply_mask(signal, mask):
@@ -199,10 +203,8 @@ def create_plane_wave_mask(MatrixSize, SampleRate, SimDuration,SimOption):
     stepsize = temporalChange * (1 / spatialChange)
     onsetTimeVector = np.arange(np.min(M),np.max(M)+stepsize,stepsize)            
     #time = time
-    onsetStartingIndex = int(np.floor((SimOption["WaveOnset"]/ SimOption["TemporalFrequency"] ) * SampleRate))
-    offsetStartingIndex = len(onsetTimeVector) +  onsetStartingIndex + \
-                            (int(np.floor(SimOption["WaveDuration"]*     \
-                            1/SimOption["TemporalFrequency"] * SampleRate)))
+    onsetStartingIndex = int(np.floor(SimOption["WaveOnset"] / (1000/SampleRate)))
+    offsetStartingIndex = len(onsetTimeVector) +  onsetStartingIndex +  int(np.floor(SimOption["WaveDuration"]/ (1000/SampleRate)))
 
     for timeSample in range(int(np.floor(SimDuration * SampleRate))):
         #Mask ON
@@ -369,7 +371,7 @@ def create_pink_noise( MatrixSize, SampleRate, SimDuration):
         signalCube[:,:,i] = status
     return signalCube
 
-def SNRMix(SignalWaveData, NoiseWaveData, SNR, Mask=None):
+def SNRMix(SignalWaveData, NoiseWaveData, SNR, Mask=None, SimLayout="channels"):
     if Mask is not None and np.any(Mask):
         SNR = SNR * (1-Mask)
     elif "Mask" in SignalWaveData.DataBuckets.keys():
@@ -381,8 +383,8 @@ def SNRMix(SignalWaveData, NoiseWaveData, SNR, Mask=None):
         signalCube = (noise + (signal * SNR)) / (1 + SNR)
     else:
         signalCube = (noise + (signal * SNR[:,np.newaxis,np.newaxis])) / (1 + SNR)[:,np.newaxis,np.newaxis]
-
-    wavedata = create_wavedata(signalCube, SignalWaveData.get_sample_rate(),SignalWaveData.get_time()[-1],SignalWaveData.get_SimInfo())
+    
+    wavedata = create_wavedata(signalCube, SignalWaveData.get_sample_rate(), SignalWaveData.get_time()[-1],SimLayout, SignalWaveData.get_SimInfo())
     return wavedata
 
 # utility functions
@@ -517,11 +519,21 @@ def combine_SimData(SimDataList, dimension = 'trl', SimCondList = None, dataBuck
         for ind,name in enumerate(dataBucketNames):
             newdata[ind] = np.concatenate([SimData.get_data(name) for SimData in SimDataList], axis=0)
         SimInfo = []
-        for SimData, condname in zip(SimDataList, SimCondList):
-            sim_info = SimData.get_SimInfo()
-            for info in sim_info:
-                info['condname'] = condname
-            SimInfo += sim_info
+        if len(SimCondList) == len(newdata[0]):
+            titlecounter = 0
+            for simdata in SimDataList:
+                sim_info = simdata.get_SimInfo()
+                for info in sim_info:
+                    info['condname'] = SimCondList[titlecounter]
+                    titlecounter += 1
+                SimInfo += sim_info
+        else:
+            for SimData, condname in zip(SimDataList, SimCondList):
+                sim_info = SimData.get_SimInfo()
+                for info in sim_info:
+                    info['condname'] = condname
+                SimInfo += sim_info
+
     elif dimension == 'time':
         # Check if all datasets have the same sample rate, channel names, and channel positions
         for SimData in SimDataList[1:]:
@@ -560,5 +572,6 @@ def combine_SimData(SimDataList, dimension = 'trl', SimCondList = None, dataBuck
         dataBucket = wd.DataBucket(newdata[ind], name,dimord, channel_names)
         waveData.add_data_bucket(dataBucket)
     waveData.set_simInfo(SimInfo)
+    waveData.set_trialInfo([SimInfo["condname"] for SimInfo in waveData.get_SimInfo()])
     waveData.set_sample_rate(sampleRate)
     return waveData

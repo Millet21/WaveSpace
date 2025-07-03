@@ -10,28 +10,86 @@ import os
 from multiprocessing import Pool, cpu_count
 from joblib import Parallel, delayed
 
-def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngle=np.pi, tolerance=0.2):
-    #Python implementation of: https://github.com/mullerlab/generalized-phase.git
+def calculate_distance_correlation(waveData, dataBucketName = "", sourcePoints = [], pixelSpacing= 1):
     if  dataBucketName == "":
         dataBucketName =  waveData.ActiveDataBucket
     else:
         waveData.set_active_dataBucket(dataBucketName)
-
-    if not waveData.get_data(dataBucketName).dtype == complex:
-        raise TypeError("Data needs to be complex")
-
+    
     hf.assure_consistency(waveData)
-    hf.squareSpatialPositions(waveData)
-    grid_x, grid_y = sensors.interpolate_pos_to_grid(
-    waveData, 
-    numGridBins=15)
+    ComplexPhaseData = waveData.get_data(dataBucketName)
+    origDimord = waveData.DataBuckets[dataBucketName].get_dimord()
+    origShape = ComplexPhaseData.shape
+    desiredDimord = "trl_posx_posy_time"
+    hasBeenReshaped, ComplexPhaseData =  hf.force_dimord(ComplexPhaseData, origDimord , desiredDimord)
+    nTrials = ComplexPhaseData.shape[0]
+    if os.name == 'posix':  # Unix 
+        pool = Pool(cpu_count())
+        output = pool.map(distcorr_process_trial, [(ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing) for ii in range(nTrials)])
 
-    # make new distMat based on the interpolated grid
-    positions = np.dstack((grid_x, grid_y)).reshape(-1, 2)
+    else:  # Windows or Mac
+        output = Parallel(n_jobs=cpu_count())(delayed(phase_dist_corr_task)([np.angle(ComplexPhaseData[ii]),ii, sourcePoints, pixelSpacing]) for ii in range(nTrials))
+    
+    df = pd.concat(output, ignore_index=True)
+    if hasBeenReshaped:
+        origDimordList = str.split(origDimord, '_')
+        groupDims  = [dim for dim in origDimordList if not (dim == "posx" or dim =="posy" or dim == "time")]
+        groupDimSizes = origShape[:len(groupDims)]
+        multi_indices  = np.array(np.unravel_index(np.arange(ComplexPhaseData.shape[0]), groupDimSizes)).T
+          
+    phaseCorrBucket = wa.DataBucket(df, "PhaseDistanceCorrelation", "DataFrame", waveData.get_channel_names())
+    waveData.add_data_bucket(phaseCorrBucket)
+
+def phase_dist_corr_task(args):
+    data, ii, sourcePoints, pixelSpacing, = args
+    nTimePoints = data.shape[-1]
+    df = DataFrame(columns=['trialInd', 'sourcePointX', 'sourcePointY', 'evaluationPoint', 'rho', 'p'])
+    for sourceIndex, sourcePoint in enumerate(sourcePoints):
+        for timePoint in range(nTimePoints):
+            corr = phase_dist_corr(data[:,:,timePoint], sourcePoint, pixelSpacing)
+            df.loc[len(df)] =  ii, sourcePoint[0], sourcePoint[1], timePoint, corr[0], corr[1]
+    return df
+
+def calculate_distance_correlation_GP(waveData, dataBucketName = "", evaluationAngle=np.pi, tolerance=0.2):
+    """
+    Calculate the distance correlation for wave data.
+
+    Python implementation of: https://github.com/mullerlab/generalized-phase.git
+
+    Parameters
+    ----------
+    waveData : WaveData object
+    dataBucketName : str, optional
+        Name of the data bucket to use (defaults to the active data bucket). Data in Bucket needs to be complex.
+    evaluationAngle : float, optional
+        Phase angle (in radians) that triggers the evaluation point (default: np.pi).
+    tolerance : float, optional
+        Numerical tolerance for phase angle matching (default: 0.2).
+    
+    Notes
+    -----
+    Needs a distance matrix to be defined in the WaveData object. See SpatialArrangement if not already there.  
+    """
+    
+    #sanity checks:
+    if  dataBucketName == "":
+        dataBucketName =  waveData.ActiveDataBucket
+    else:
+        waveData.set_active_dataBucket(dataBucketName)
+    
+    hf.assure_consistency(waveData)
+
+    ComplexPhaseData = waveData.get_data(dataBucketName)
+    origDimord = waveData.DataBuckets[dataBucketName].get_dimord()
+    origShape = ComplexPhaseData.shape
+    desiredDimord = "trl_posx_posy_time"
+    hasBeenReshaped, ComplexPhaseData =  hf.force_dimord(ComplexPhaseData, origDimord , desiredDimord)
+
+    if not ComplexPhaseData.dtype == complex:
+        raise TypeError("Data needs to be complex") 
+
     if not np.any(waveData.get_distMat()):
-        sensors.regularGrid(waveData, positions)
-        distMat = waveData.get_distMat()
-        print("Warning: No Distance Matrix defined, making regular grid distance matrix on the fly")
+        raise TypeError("No Distance Matrix defined. Use SpatialArrangement tools to make one")
     elif waveData.HasRegularLayout:
         distMat = waveData.get_distMat()
         if not sensors.is_regular_grid_2d(distMat):
@@ -39,9 +97,7 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
     else:
         raise RuntimeError("Distance Matrix not found or not regular")
 
-    ComplexPhaseData = waveData.get_data(dataBucketName)
     nTrials, nXpos, nYpos, nTime = ComplexPhaseData.shape
-
     if not np.any(waveData.get_channel_positions()):
         sensors.distmat_to_2d_coordinates_MDS(waveData)
     X = waveData.get_channel_positions()[:, 0]
@@ -49,7 +105,7 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
     pixelspacing = distMat[0, 1]
     output = list()
 
-    if os.name == 'posix':  # This is a Unix system
+    if os.name == 'posix':  # Unix 
         pool = Pool(cpu_count())
         output = pool.map(distcorr_process_trial, [(ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing) for ii in range(nTrials)])
 
@@ -57,9 +113,25 @@ def calculate_distance_correlation(waveData, dataBucketName = "", evaluationAngl
         output = Parallel(n_jobs=cpu_count())(delayed(distcorr_process_trial)([ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing]) for ii in range(nTrials))
 
     df = pd.concat(output, ignore_index=True)
+    if hasBeenReshaped:
+        origDimordList = str.split(origDimord, '_')
+        groupDims  = [dim for dim in origDimordList if not (dim == "posx" or dim =="posy" or dim == "time")]
+        groupDimSizes = origShape[:len(groupDims)]
+        multi_indices  = np.array(np.unravel_index(np.arange(ComplexPhaseData.shape[0]), groupDimSizes)).T
+        for ind, dim in enumerate(groupDims):
+                df.insert(0,dim,0)
+
+        for TargetTrialInd, currentIndex in enumerate(multi_indices):
+            indices = df["trialind"] == TargetTrialInd
+            for ind, dim in enumerate(groupDims):
+                df.loc[indices, dim] = currentIndex[ind]
+        df = df.drop(columns = "trialind")
+    else:
+        df = df.rename(columns={"trialind":"trl"})  
+          
     phaseCorrBucket = wa.DataBucket(df, "PhaseDistanceCorrelation", "DataFrame", waveData.get_channel_names())
     waveData.add_data_bucket(phaseCorrBucket)
-
+    
 
 def distcorr_process_trial(args):
     ii, ComplexPhaseData, evaluationAngle, tolerance, X, Y, pixelspacing = args
@@ -75,8 +147,6 @@ def distcorr_process_trial(args):
                      'sourcepointsY': source[1], 'evaluationpoints': ep})
 
     return df
-
-
 
 def phase_dist_corr(ph, source, pixelSpacing):
     """correlation of phase with distance
@@ -139,8 +209,6 @@ def find_evaluation_points(complexPhaseData, evaluationAngle, tolerance):
     dr= np.array(dr)+1
     ep = dr[0, np.abs(r[dr[0]]) <tolerance]
     return ep
-
-
 
 def find_source_points(data, X, Y,evaluationPoints, dx, dy ):
     # % 
