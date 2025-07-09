@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #%%
-saveFolder = "ExampleData/Output/"
+saveFolder = "Examples/ExampleData/Output/"
 waveData = ImportHelpers.load_wavedata_object(saveFolder + "SimulatedData")
 
 #Create 10 sample points along the diagonal of the channel array

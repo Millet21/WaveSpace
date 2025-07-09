@@ -1,7 +1,7 @@
 import WaveSpace.Utils.HelperFuns as hf
 import WaveSpace.Utils.WaveData as wd
 import numpy as np
-from scipy.signal import morlet2
+import pywt
 
 def freq_domain_wavelet(waveData, dataBucket, freqlist): 
     """computes the wavelet transform of input data using 
@@ -21,16 +21,43 @@ def freq_domain_wavelet(waveData, dataBucket, freqlist):
     waveData.add_data_bucket(ComplexPhaseDataBucket)
 
 
-def tfr_morlet(data, freqs, n_cycles):
+def tfr_morlet(data, freqs, n_cycles, sampling_period=1.0, wavelet_name='cmor1.5-1.0'):
+    """
+    Compute time–frequency representation using a Morlet CWT (via PyWavelets),
+    with the same interface & output shape as your original FFT+morlet2 version.
+
+    Parameters
+    ----------
+    data : np.ndarray, shape (n_trials, n_channels, n_times)
+        Your time‑series data.
+    freqs : array-like, length n_frequencies
+        Frequencies (in Hz) at which to compute the TFR.
+    n_cycles : float
+        Number of cycles in the Morlet wavelet (controls time–frequency trade‑off).
+    sampling_period : float, default=1.0
+        Time between samples (1 / sampling_rate).  
+    wavelet_name : str, default='cmor1.5-1.0'
+        PyWavelets’ complex Morlet; you can tweak the “B-C” parameters here.
+
+    Returns
+    -------
+    tfr : np.ndarray, shape (n_trials, n_frequencies, n_channels, n_times)
+        Complex TFR coefficients.
+    """
     n_trials, n_channels, n_times = data.shape
     n_frequencies = len(freqs)
-    tfr = np.zeros(( n_trials, n_frequencies, n_channels,  n_times), dtype=np.complex128)
+    scales = (n_cycles / (2 * np.pi * np.array(freqs))) / sampling_period
+    tfr = np.zeros((n_trials, n_frequencies, n_channels, n_times), dtype=np.complex128)
     for i_trial in range(n_trials):
         for i_ch in range(n_channels):
-            for i_freq, freq in enumerate(freqs):
-                w = morlet2(n_times, n_cycles / (freq * 2 * np.pi), w=5)
-                data_tf = np.fft.fft(data[i_trial, i_ch, :] * w)
-                tfr[i_trial,i_freq, i_ch, : ] = data_tf
+            coeffs, _ = pywt.cwt(
+                data[i_trial, i_ch, :],
+                scales,
+                wavelet_name,
+                sampling_period=sampling_period
+            )
+            # coeffs.shape == (n_frequencies, n_times)
+            tfr[i_trial, :, i_ch, :] = coeffs
     return tfr
 
 #################
