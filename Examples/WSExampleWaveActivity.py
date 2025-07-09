@@ -16,7 +16,7 @@ from matplotlib import cm
 
 #%%
 
-waveData = ImportHelpers.load_wavedata_object("ExampleData/Output/ComplexData")
+waveData = ImportHelpers.load_wavedata_object("Examples/ExampleData/Output/ComplexData")
 
 # %% Here we look at the spatial basis functions of our data. We index into the dataBucket to use only a subset of trials (of the same conditon) and only the frequency of interest
 nBases=3
@@ -44,6 +44,7 @@ for b in range(nBases):
 
 plt.tight_layout()
 plt.show()
+fig.savefig('Examples/ExampleData/Output/Spatial basis subset.png')
 
 #%% alternatively, we cann calculate the bases on all data at once, and sort out the weights later:
 nBases=5
@@ -71,7 +72,7 @@ for b in range(nBases):
 
 plt.tight_layout()
 plt.show()
-
+fig.savefig('Examples/ExampleData/Output/Spatial basis all data.png')
 # the bases have changed to express linear combinations of all the waves we put in. 
 
 

@@ -54,9 +54,11 @@ for condition in conditions:
     plt.imshow(newlineseries, aspect=4)
     plt.title(f"Channels over time (Condition {condition})")
     plt.show()
+    plt.savefig(saveFolder + "Example2DFFT_ChannelsTimeseries.png")
 
     plot = Plotting.plotfft_zoomed(np.mean(waveData.get_data("FFT_ABS")[indices,:,:],axis=0), waveData.get_sample_rate(), -20, 20, "fft abs", scale='log')
     plot.show()
+    plt.savefig(saveFolder + "Example2DFFT_fftdecomposition.png")
 
     x_labels = np.arange(1)
     plt.figure()
@@ -66,3 +68,4 @@ for condition in conditions:
     plt.xticks(x_labels + 0.125, ["0 degree"])
     plt.title(f"Max Power (Condition {condition})")
     plt.show()
+    plt.savefig(saveFolder + "Example2DFFT_MaxPower.png")

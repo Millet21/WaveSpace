@@ -20,6 +20,7 @@ from WaveSpace.Decomposition import GenPhase
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 from scipy.signal import welch
 
 # Load some simulated data
