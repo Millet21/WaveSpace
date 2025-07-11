@@ -44,7 +44,7 @@ pointRange = range(0,20,2)
 sourcePoints = []
 for i in pointRange:
     sourcePoints.append((i,i))
-DistanceCorrelation.calculate_distance_correlation(waveData, dataBucketName = "AnalyticSignal", sourcePoints=sourcePoints, pixelSpacing=1)
+DistanceCorrelation.calculate_distance_correlation(waveData, dataBucketName = "complexData", sourcePoints=sourcePoints, pixelSpacing=1)
 
 #%% Plot phase-distance correlation over time for selected points on diagonal
 phaseDistCorr= waveData.get_data("PhaseDistanceCorrelation")
